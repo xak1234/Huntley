@@ -12,7 +12,8 @@
     "underscore": "^1.13.6",
     "bluebird": "^3.7.2",
     "cors": "^2.8.5",
-    "base64-js": "^1.5.1"
+    "base64-js": "^1.5.1",
+    "jszip": "^3.10.1"
   },
   "engines": {
     "node": "20"
