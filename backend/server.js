@@ -64,40 +64,75 @@ app.post('/api/chat', async (req, res) => {
   `;
 
   try {
-    // Make HTTP request to Gemini API
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt }
-              ]
+    // First, try the Gemini API
+    let botResponse;
+    try {
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: prompt }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              topP: 0.95,
+              topK: 40,
+              maxOutputTokens: 1024,
             }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: 1024,
-          }
-        })
+          })
+        }
+      );
+
+      if (!geminiResponse.ok) {
+        throw new Error(`Gemini API request failed: ${geminiResponse.statusText}`);
       }
-    );
 
-    // Check if the response is OK
-    if (!response.ok) {
-      throw new Error(`Gemini API request failed: ${response.statusText}`);
+      const geminiData = await geminiResponse.json();
+      botResponse = geminiData.candidates[0].content.parts[0].text;
+    } catch (geminiError) {
+      console.error('Gemini API error, falling back to OpenAI:', geminiError);
+
+      // Fallback to OpenAI API if Gemini fails
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OpenAI API key not provided, cannot fallback');
+      }
+
+      const openaiResponse = await fetch(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              { role: 'system', content: 'You are Huntley, an AI assistant.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 1024,
+          })
+        }
+      );
+
+      if (!openaiResponse.ok) {
+        throw new Error(`OpenAI API request failed: ${openaiResponse.statusText}`);
+      }
+
+      const openaiData = await openaiResponse.json();
+      botResponse = openaiData.choices[0].message.content;
     }
-
-    // Parse the response
-    const data = await response.json();
-    const botResponse = data.candidates[0].content.parts[0].text;
 
     // Add bot response to history
     history.messages.push({ sender: 'Bot', content: botResponse });
@@ -105,7 +140,7 @@ app.post('/api/chat', async (req, res) => {
 
     res.json({ response: botResponse });
   } catch (error) {
-    console.error('Gemini API error:', error);
+    console.error('Error generating response:', error);
     res.status(500).json({ error: 'Failed to generate response' });
   }
 });
