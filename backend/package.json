@@ -4,7 +4,7 @@
   "description": "Chatbot application with Gemini API",
   "main": "server.js",
   "scripts": {
-    "start": "backend/server.js"
+    "start": "server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.12.0",
