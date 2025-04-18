@@ -2,12 +2,20 @@ const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
 const mammoth = require('mammoth');
+const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Enable CORS for the static site
+app.use(cors({
+  origin: 'https://huntleyonline.onrender.com',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type'],
+}));
+console.log('✅ CORS enabled for https://huntleyonline.onrender.com');
+
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../')));
 
 // Validate API keys at startup
 if (!process.env.GEMINI_API_KEY) {
@@ -49,11 +57,13 @@ async function saveChatHistory(history) {
 
 // API Routes
 app.get('/api/chat-history', async (req, res) => {
+  console.log('📩 Received request for /api/chat-history');
   const history = await loadChatHistory();
   res.json(history);
 });
 
 app.post('/api/chat', async (req, res) => {
+  console.log('📩 Received request for /api/chat:', req.body);
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Message required' });
 
@@ -173,8 +183,15 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  console.log('📩 Received request for /health');
+  res.status(200).json({ status: 'OK', message: 'Huntley server is running' });
+});
+
 // Basic root route
 app.get('/', (req, res) => {
+  console.log('📩 Received request for /');
   res.send('Huntley server is running...');
 });
 
