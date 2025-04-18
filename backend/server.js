@@ -9,6 +9,15 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../')));
 
+// Validate API keys at startup
+if (!process.env.GEMINI_API_KEY) {
+  console.error('FATAL ERROR: GEMINI_API_KEY environment variable is not set!');
+  process.exit(1);
+}
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('WARNING: OPENAI_API_KEY environment variable is not set! OpenAI fallback will fail.');
+}
+
 // Load bot background from .docx
 let botBackground;
 async function loadBotBackground() {
@@ -16,6 +25,7 @@ async function loadBotBackground() {
     const docxPath = path.join(__dirname, 'Soham.docx');
     const result = await mammoth.extractRawText({ path: docxPath });
     botBackground = result.value; // Extracted text from .docx
+    console.log('✅ Bot background loaded successfully');
   } catch (error) {
     console.error('Error loading .docx file:', error);
     botBackground = 'Default bot background: Huntley is a friendly and helpful AI assistant.';
@@ -67,6 +77,7 @@ app.post('/api/chat', async (req, res) => {
     // First, try the Gemini API
     let botResponse;
     try {
+      console.log('📞 Calling Gemini API...');
       const geminiResponse = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
@@ -92,20 +103,25 @@ app.post('/api/chat', async (req, res) => {
         }
       );
 
+      console.log(`📡 Gemini API Status Code: ${geminiResponse.status}`);
       if (!geminiResponse.ok) {
+        const errorBody = await geminiResponse.text();
+        console.error(`Cannot access Gemini API: Status ${geminiResponse.status}, Body: ${errorBody}`);
         throw new Error(`Gemini API request failed: ${geminiResponse.statusText}`);
       }
 
       const geminiData = await geminiResponse.json();
       botResponse = geminiData.candidates[0].content.parts[0].text;
+      console.log('✅ Gemini API responded successfully');
     } catch (geminiError) {
-      console.error('Gemini API error, falling back to OpenAI:', geminiError);
+      console.error('Cannot access Gemini API:', geminiError.message);
 
       // Fallback to OpenAI API if Gemini fails
       if (!process.env.OPENAI_API_KEY) {
-        throw new Error('OpenAI API key not provided, cannot fallback');
+        throw new Error('Cannot access OpenAI API: OpenAI API key not provided, cannot fallback');
       }
 
+      console.log('📞 Falling back to OpenAI API...');
       const openaiResponse = await fetch(
         'https://api.openai.com/v1/chat/completions',
         {
@@ -126,26 +142,45 @@ app.post('/api/chat', async (req, res) => {
         }
       );
 
+      console.log(`📡 OpenAI API Status Code: ${openaiResponse.status}`);
       if (!openaiResponse.ok) {
+        const errorBody = await openaiResponse.text();
+        console.error(`Cannot access OpenAI API: Status ${openaiResponse.status}, Body: ${errorBody}`);
         throw new Error(`OpenAI API request failed: ${openaiResponse.statusText}`);
       }
 
       const openaiData = await openaiResponse.json();
       botResponse = openaiData.choices[0].message.content;
+      console.log('✅ OpenAI API responded successfully');
     }
 
     // Add bot response to history
     history.messages.push({ sender: 'Bot', content: botResponse });
     await saveChatHistory(history);
 
+    // Log the conversation
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      userMessage: message,
+      botResponse: botResponse,
+    };
+    console.log('💬 Conversation Log:', JSON.stringify(logEntry));
+
     res.json({ response: botResponse });
   } catch (error) {
-    console.error('Error generating response:', error);
-    res.status(500).json({ error: 'Failed to generate response' });
+    console.error('Error generating response:', error.message);
+    res.status(500).json({ error: `Failed to generate response: ${error.message}` });
   }
+});
+
+// Basic root route
+app.get('/', (req, res) => {
+  res.send('Huntley server is running...');
 });
 
 // Start server
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`✅ Huntley server live at http://localhost:${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Render Hostname: ${process.env.RENDER_EXTERNAL_HOSTNAME || 'Not set'}`);
 });
