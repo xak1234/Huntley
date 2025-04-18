@@ -2,6 +2,7 @@ const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs').promises;
 const path = require('path');
+const mammoth = require('mammoth');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -13,13 +14,19 @@ app.use(express.static(path.join(__dirname, '../public')));
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-// Load bot personality
-let botPerson;
-async function loadBotPerson() {
-  const data = await fs.readFile(path.join(__dirname, 'botperson.json'), 'utf8');
-  botPerson = JSON.parse(data);
+// Load bot background from .docx
+let botBackground;
+async function loadBotBackground() {
+  try {
+    const docxPath = path.join(__dirname, 'Soham_Huntley and Carr_.docx');
+    const result = await mammoth.extractRawText({ path: docxPath });
+    botBackground = result.value; // Extracted text from .docx
+  } catch (error) {
+    console.error('Error loading .docx file:', error);
+    botBackground = 'Default bot background: Huntley is a friendly and helpful AI assistant.';
+  }
 }
-loadBotPerson();
+loadBotBackground();
 
 // Chat history file
 const chatHistoryFile = path.join(__dirname, 'chat_history.json');
@@ -51,13 +58,14 @@ app.post('/api/chat', async (req, res) => {
   // Add user message to history
   history.messages.push({ sender: 'You', content: message });
 
-  // Prepare prompt with bot personality and chat history
+  // Prepare prompt with bot background and chat history
   const prompt = `
-    You are ${botPerson.name}, a ${botPerson.personality} AI. ${botPerson.background} ${botPerson.context}
+    You are Huntley, an AI assistant defined by the following background:
+    ${botBackground}
     Previous conversation:
     ${history.messages.map(msg => `${msg.sender}: ${msg.content}`).join('\n')}
     User: ${message}
-    Respond as ${botPerson.name}:
+    Respond as Huntley:
   `;
 
   try {
