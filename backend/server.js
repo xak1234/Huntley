@@ -1,5 +1,4 @@
 const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs').promises;
 const path = require('path');
 const mammoth = require('mammoth');
@@ -8,11 +7,7 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../')));
-
-// Initialize Gemini API
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Load bot background from .docx
 let botBackground;
@@ -69,9 +64,40 @@ app.post('/api/chat', async (req, res) => {
   `;
 
   try {
-    // Call Gemini API
-    const result = await model.generateContent(prompt);
-    const botResponse = result.response.text();
+    // Make HTTP request to Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: prompt }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 1024,
+          }
+        })
+      }
+    );
+
+    // Check if the response is OK
+    if (!response.ok) {
+      throw new Error(`Gemini API request failed: ${response.statusText}`);
+    }
+
+    // Parse the response
+    const data = await response.json();
+    const botResponse = data.candidates[0].content.parts[0].text;
 
     // Add bot response to history
     history.messages.push({ sender: 'Bot', content: botResponse });
