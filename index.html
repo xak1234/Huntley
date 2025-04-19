@@ -6,10 +6,11 @@
   <title>Bot Selector</title>
   <style>
     body {
-      font-family: sans-serif;
-      background-color: #111;
-      color: white;
+      margin: 0;
       padding: 2rem;
+      background-color: #0f0f0f;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     .bot-buttons {
@@ -20,19 +21,20 @@
     }
 
     .bot-button {
-      background-color: #dc2626;
+      background-color: #b91c1c;
       color: white;
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 0.375rem;
+      padding: 1rem 2rem;
       font-size: 1rem;
+      border: none;
+      border-radius: 12px;
       cursor: pointer;
-      box-shadow: 0 0 10px #f87171;
-      transition: background-color 0.2s ease;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+      transition: all 0.2s ease-in-out;
     }
 
     .bot-button:hover {
-      background-color: #b91c1c;
+      background-color: #dc2626;
+      transform: scale(1.05);
     }
 
     .active {
@@ -42,7 +44,7 @@
     }
 
     .active span {
-      color: #f87171;
+      color: #ef4444;
     }
   </style>
 </head>
@@ -74,11 +76,35 @@
           <head>
             <title>${bot} Chat</title>
             <style>
-              body { font-family: sans-serif; padding: 20px; background-color: #111; color: white; }
-              .header { font-size: 24px; font-weight: bold; color: #61dafb; margin-bottom: 20px; }
-              .chat-box { border: 1px solid #444; padding: 10px; height: 500px; overflow-y: scroll; background-color: #222; }
-              .input-area { margin-top: 10px; }
-              input { width: 100%; padding: 10px; border: none; background-color: #333; color: white; }
+              body {
+                font-family: sans-serif;
+                padding: 20px;
+                background-color: #111;
+                color: white;
+              }
+              .header {
+                font-size: 24px;
+                font-weight: bold;
+                color: #61dafb;
+                margin-bottom: 20px;
+              }
+              .chat-box {
+                border: 1px solid #444;
+                padding: 10px;
+                height: 500px;
+                overflow-y: scroll;
+                background-color: #222;
+              }
+              .input-area {
+                margin-top: 10px;
+              }
+              input {
+                width: 100%;
+                padding: 10px;
+                border: none;
+                background-color: #333;
+                color: white;
+              }
             </style>
           </head>
           <body>
