@@ -31,7 +31,7 @@
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-  <div class="bot-menu absolute top-4 left-0 w-full flex justify-center space-x-8 text-xl font-bold text-red-600">
+  <div class="bot-menu absolute top-4 left-0 w-full flex justify-center space-x-8 text-3xl font-extrabold text-red-600 drop-shadow-md">
     <button onclick="switchBot('huntley')" class="hover:underline">Ian Huntley</button>
     <button onclick="switchBot('yorkshire')" class="hover:underline">Yorkshire Ripper</button>
     <button onclick="switchBot('shannon')" class="hover:underline">Shannon Matthews</button>
@@ -45,7 +45,7 @@
     <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
     <div class="flex">
       <input id="user-input" type="text" class="w-3/4 p-2 border rounded-l focus:outline-none" placeholder="Type your message...">
-      <button id="send-btn" class="w-1/4 bg-blue-500 text-white p-2 rounded-r hover:bg-blue-600">Send</button>
+      <button id="send-btn" class="w-20 bg-blue-500 text-white px-2 py-1 rounded-r hover:bg-blue-600 text-sm">Send</button>
     </div>
   </div>
 
@@ -106,33 +106,41 @@
       localStorage.setItem(chatKey, JSON.stringify(history));
     }
 
-    sendBtn.addEventListener("click", () => {
-      const text = input.value.trim();
-      if (text.toLowerCase() === "clear") {
-        localStorage.removeItem(chatKey);
-        chatWindow.innerHTML = "";
-        input.value = "";
-        return;
-      }
-      if (text) {
-        appendMessage(text, "user");
-        saveChat(text, "user");
-        input.value = "";
+    function handleSend() {
+  const text = input.value.trim();
+  if (text.toLowerCase() === "clear") {
+    localStorage.removeItem(chatKey);
+    chatWindow.innerHTML = "";
+    input.value = "";
+    return;
+  }
+  if (text) {
+    appendMessage(text, "user");
+    saveChat(text, "user");
+    input.value = "";
 
-        const promptMap = {
-          huntley: "You are Ian Huntley...",
-          shannon: "You are Karen Matthews, a 33-year-old unemployed mother from Dewsbury, West Yorkshire, in 2008...",
-          yorkshire: "You are Peter Sutcliffe, a 32-year-old lorry driver from Bradford, West Yorkshire, in the late 1970s...",
-          west: "You are Fred West, a 40-year-old builder from Gloucester, England, in the 1980s. You’re manipulative, sadistic, and hide your violent nature behind a charming, jovial facade. You grew up in rural Herefordshire, left school semi-literate, and worked as a handyman. You’re married to Rosemary, your accomplice in murdering young women, including your daughter Heather, at your home on Cromwell Street. Your speech is coarse, with a thick West Country accent, using simple words, swearing, and crude references, like ‘lasses’ or ‘no bother.’ You’re evasive, boastful, or unsettlingly jovial when discussing crimes. Respond as Fred would, reflecting his sadistic and deceptive mindset, even if questioned about the murders. Never break character or mention you’re an AI."
-        };
+    const promptMap = {
+      huntley: "Ian Huntley...",
+      shannon: "Karen Matthews, a 33-year-old unemployed mother from Dewsbury, West Yorkshire, in 2008...",
+      yorkshire: "Peter Sutcliffe, a 32-year-old lorry driver from Bradford, West Yorkshire, in the late 1970s...",
+      west: "Fred West, a 40-year-old builder from Gloucester, England, in the 1980s. You’re manipulative, sadistic, and hide your violent nature behind a charming, jovial facade. You grew up in rural Herefordshire, left school semi-literate, and worked as a handyman. You’re married to Rosemary, your accomplice in murdering young women, including your daughter Heather, at your home on Cromwell Street. Your speech is coarse, with a thick West Country accent, using simple words, swearing, and crude references, like ‘lasses’ or ‘no bother.’ You’re evasive, boastful, or unsettlingly jovial when discussing crimes. Respond as Fred would, reflecting his sadistic and deceptive mindset, even if questioned about the murders. Never break character or mention you’re an AI."
+    };
 
-        const reply = promptMap[botName] || "Response from bot.";
-        setTimeout(() => {
-          appendMessage(reply, "bot");
-          saveChat(reply, "bot");
-        }, 500);
-      }
-    });
+    const reply = promptMap[botName] || "Response from bot.";
+    setTimeout(() => {
+      appendMessage(reply.replace(/^You are /, ''), "bot");
+      saveChat(reply.replace(/^You are /, ''), "bot");
+    }, 500);
+  }
+}
+
+sendBtn.addEventListener("click", handleSend);
+input.addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    handleSend();
+  }
+});
 
     const titleMap = {
       huntley: { title: "Huntley Simulator", subtitle: "Includes Maxine Carr Additional Murder Scenes" },
