@@ -34,7 +34,7 @@
       margin-bottom: 20px;
     }
     .button-container button {
-      padding: 8px 16px; /* Slimmer buttons */
+      padding: 8px 16px;
       background-color: #e74c3c;
       color: white;
       border: none;
@@ -43,7 +43,7 @@
       text-align: center;
       font-size: 14px;
       flex: 1;
-      margin: 0 10px; /* More space between buttons */
+      margin: 0 10px;
       animation: pulse 2s infinite;
     }
     .button-container button:hover {
@@ -88,11 +88,16 @@
       try {
         const titleEl = document.getElementById('window-title');
         const subtitleEl = document.getElementById('window-subtitle');
-        if (!titleEl || !subtitleEl) {
-          console.error('Title or subtitle element not found');
+        const chatWindow = document.getElementById('chat-window');
+        if (!titleEl || !subtitleEl || !chatWindow) {
+          console.error('Title, subtitle, or chat window element not found');
           return;
         }
 
+        // Clear the chat window
+        chatWindow.innerHTML = '';
+
+        const personalityName = personality === 'huntley' ? 'Huntley' : 'Yorkshire Ripper';
         if (personality === 'huntley') {
           personalityData.huntley.prompt = await loadPromptData('./Huntleyprompt.txt');
           personalityData.huntley.background = await loadBackgroundData('./Huntley.txt');
@@ -105,10 +110,10 @@
           subtitleEl.innerText = 'Peter Sutcliffe';
         }
         console.log(`Successfully loaded personality: ${personality}`, personalityData[personality]);
-        displayMessage(`Switched to ${personality} personality.`, 'system');
+        displayMessage(`Switched to ${personalityName} personality.`, 'system');
       } catch (error) {
         console.error(`Failed to load personality ${personality}: ${error}`);
-        displayMessage(`Error: Failed to load ${personality} data: ${error.message}`, 'error');
+        displayMessage(`Error: Failed to load ${personalityName} data: ${error.message}`, 'error');
       }
     }
 
@@ -118,10 +123,14 @@
         console.log(`Loading prompt from: ${filename}`);
         const response = await fetch(filename);
         console.log(`Response status: ${response.status} ${response.statusText}`);
+        console.log(`Response URL: ${response.url}`);
         if (!response.ok) {
           throw new Error(`Failed to load prompt data from ${filename}: ${response.status} ${response.statusText}`);
         }
         const promptData = await response.text();
+        if (promptData.trim().startsWith('<!DOCTYPE') || promptData.includes('<html')) {
+          throw new Error(`Prompt data from ${filename} appears to be HTML, not plain text`);
+        }
         console.log(`Prompt Data Loaded:`, promptData);
         return promptData;
       } catch (error) {
@@ -136,10 +145,14 @@
         console.log(`Loading background from: ${filename}`);
         const response = await fetch(filename);
         console.log(`Response status: ${response.status} ${response.statusText}`);
+        console.log(`Response URL: ${response.url}`);
         if (!response.ok) {
           throw new Error(`Failed to load background data from ${filename}: ${response.status} ${response.statusText}`);
         }
         const backgroundData = await response.text();
+        if (backgroundData.trim().startsWith('<!DOCTYPE') || backgroundData.includes('<html')) {
+          throw new Error(`Background data from ${filename} appears to be HTML, not plain text`);
+        }
         console.log(`Background Data Loaded:`, backgroundData);
         return backgroundData;
       } catch (error) {
@@ -156,7 +169,7 @@
       if (type === 'user') {
         message.style.color = 'black';
       } else if (type === 'bot') {
-        message.style.color = 'blue';
+        message.style.color = '#FFFF00';
       } else if (type === 'error') {
         message.style.color = 'red';
       } else if (type === 'system') {
@@ -173,10 +186,11 @@
       if (userInput) {
         displayMessage(`You: ${userInput}`, 'user');
         const data = personalityData[currentPersonality];
-        const response = data.prompt
-          ? `${data.prompt} You said: ${userInput}`
-          : `No prompt loaded for ${currentPersonality}.`;
-        displayMessage(`Bot: ${response}`, 'bot');
+        const personalityName = currentPersonality === 'huntley' ? 'Huntley' : 'Yorkshire Ripper';
+        const response = data.background && !data.background.includes('<!DOCTYPE')
+          ? `${personalityName}: ${data.background.split('.')[0]}. Your message: ${userInput}`
+          : `${personalityName}: Unable to load background information. Your message: ${userInput}`;
+        displayMessage(response, 'bot');
         document.getElementById('user-input').value = '';
       }
     });
