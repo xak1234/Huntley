@@ -18,7 +18,7 @@ const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 let botBackground;
 async function loadBotBackground() {
   try {
-    const docxPath = path.join(__dirname, 'Soham_Huntley and Carr_.docx');
+    const docxPath = path.join(__dirname, 'Soham.docx');
     const result = await mammoth.extractRawText({ path: docxPath });
     botBackground = result.value; // Extracted text from .docx
   } catch (error) {
