@@ -36,7 +36,7 @@ function sendMessage() {
     .then(response => response.json())
     .then(data => {
         const botMessage = document.createElement('p');
-        botMessage.textContent = `>: ${data.response}`;
+        botMessage.textContent = `Bot: ${data.response}`;
         chatWindow.appendChild(botMessage);
         userInput.value = '';
         chatWindow.scrollTop = chatWindow.scrollHeight;
