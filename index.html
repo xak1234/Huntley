@@ -89,6 +89,7 @@
 
     // Function to load the personality and its respective files asynchronously
     async function loadPersonality(personality) {
+      console.log('Loading personality:', personality); // Debug log
       if (personality === 'huntley') {
         await loadPromptData('./Huntleyprompt.txt');
         await loadBackgroundData('./Huntley.txt');
