@@ -28,32 +28,30 @@
     }
     .close-btn {
       position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
+      top: 0.25rem;
+      right: 0.25rem;
       background-color: rgba(255, 0, 0, 0.8);
       color: white;
-      padding: 0.25rem 0.5rem;
+      padding: 0.1rem 0.25rem;
       border-radius: 0.25rem;
-      font-weight: bold;
+      font-size: 0.6rem;
+      font-weight: normal;
       cursor: pointer;
       z-index: 100;
     }
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-  <div class="absolute top-4 left-4 z-50">
-    <select id="bot-selector" class="p-2 border rounded bg-white shadow">
-      <option value="huntley">Huntley</option>
-      <option value="yorkshire">Yorkshire Ripper</option>
-      <option value="shannon">Shannon Matthews</option>
-    </select>
-    <button onclick="openNewBotWindow()" class="ml-2 p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open Bot</button>
+  <div class="absolute top-4 left-4 z-50 flex space-x-4 text-sm font-semibold text-gray-800">
+    <button onclick="launchBot('huntley')" class="hover:underline">Ian Huntley</button>
+    <button onclick="launchBot('yorkshire')" class="hover:underline">Yorkshire Ripper</button>
+    <button onclick="launchBot('shannon')" class="hover:underline">Shannon Matthews</button>
   </div>
 
   <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border">
     <div class="close-btn" onclick="window.close()">X</div>
     <h1 class="text-lg font-bold mb-2 text-center" id="bot-title">Huntley Simulator</h1>
-<p class="text-xs text-center mb-4" id="bot-subtitle">Includes Maxine Carr Additional Murder Scenes</p>
+    <p class="text-xs text-center mb-4" id="bot-subtitle">Includes Maxine Carr Additional Murder Scenes</p>
     <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
     <div class="flex">
       <input id="user-input" type="text" class="flex-1 p-2 border rounded-l focus:outline-none" placeholder="Type your message...">
@@ -98,7 +96,6 @@
       return gk_fileData[filename] || "";
     }
 
-    // Make window draggable
     const dragEl = document.getElementById("draggable-window");
     let offsetX = 0, offsetY = 0, isDragging = false;
 
@@ -119,14 +116,11 @@
       isDragging = false;
     });
 
-    // Bot switching logic
-    function openNewBotWindow() {
-      const bot = document.getElementById('bot-selector').value;
+    function launchBot(bot) {
       const url = `${window.location.origin}/?bot=${bot}`;
       window.open(url, '_blank', 'width=800,height=600,resizable=yes');
     }
 
-    // Persist chat history per bot
     const botName = new URLSearchParams(window.location.search).get("bot") || "huntley";
     const chatWindow = document.getElementById("chat-window");
     const input = document.getElementById("user-input");
@@ -161,14 +155,14 @@
         appendMessage(text, "user");
         saveChat(text, "user");
         input.value = "";
-        // Placeholder for bot reply
-        const promptMap = {
-  huntley: "You are Ian Huntley...", // Add actual Huntley prompt here
-  shannon: "You are Karen Matthews, a 33-year-old unemployed mother from Dewsbury, West Yorkshire, in 2008...",
-  yorkshire: "You are Peter Sutcliffe, a 32-year-old lorry driver from Bradford, West Yorkshire, in the late 1970s..."
-};
 
-const reply = promptMap[botName] || "Response from bot.";
+        const promptMap = {
+          huntley: "You are Ian Huntley...",
+          shannon: "You are Karen Matthews, a 33-year-old unemployed mother from Dewsbury, West Yorkshire, in 2008...",
+          yorkshire: "You are Peter Sutcliffe, a 32-year-old lorry driver from Bradford, West Yorkshire, in the late 1970s..."
+        };
+
+        const reply = promptMap[botName] || "Response from bot.";
         setTimeout(() => {
           appendMessage(reply, "bot");
           saveChat(reply, "bot");
@@ -177,16 +171,16 @@ const reply = promptMap[botName] || "Response from bot.";
     });
 
     const titleMap = {
-  huntley: { title: "Huntley Simulator", subtitle: "Includes Maxine Carr Additional Murder Scenes" },
-  shannon: { title: "Karren Matthews", subtitle: "Mastermind of Shannon" },
-  yorkshire: { title: "The Yorkshire Ripper", subtitle: "Peter Sutcliff" }
-};
+      huntley: { title: "Huntley Simulator", subtitle: "Includes Maxine Carr Additional Murder Scenes" },
+      shannon: { title: "Karren Matthews", subtitle: "Mastermind of Shannon" },
+      yorkshire: { title: "The Yorkshire Ripper", subtitle: "Peter Sutcliff" }
+    };
 
-const activeBot = titleMap[botName] || titleMap.huntley;
-document.getElementById("bot-title").textContent = activeBot.title;
-document.getElementById("bot-subtitle").textContent = activeBot.subtitle;
+    const activeBot = titleMap[botName] || titleMap.huntley;
+    document.getElementById("bot-title").textContent = activeBot.title;
+    document.getElementById("bot-subtitle").textContent = activeBot.subtitle;
 
-loadChat();
+    loadChat();
   </script>
   <script src="/script.js"></script>
 </body>
