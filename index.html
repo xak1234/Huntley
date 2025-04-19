@@ -1,146 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bot Selector</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Huntley - Chat with Bot</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body {
-      margin: 0;
-      padding: 2rem;
-      background-color: #0f0f0f;
-      color: white;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    .bot-menu button {
+      transition: all 0.3s ease-in-out;
     }
-
-    .bot-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin-bottom: 2rem;
+    .bot-menu button:hover {
+      text-shadow: 0 0 5px rgba(255, 0, 0, 0.7);
+      transform: scale(1.1);
     }
-
-    .bot-button {
-      background-color: #b91c1c;
+    .close-btn {
+      position: absolute;
+      top: 0.25rem;
+      right: 0.25rem;
+      background-color: rgba(255, 0, 0, 0.8);
       color: white;
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 12px;
+      padding: 0.1rem 0.25rem;
+      border-radius: 0.25rem;
+      font-size: 0.6rem;
+      font-weight: normal;
       cursor: pointer;
-      box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
-      transition: all 0.2s ease-in-out;
-    }
-
-    .bot-button:hover {
-      background-color: #dc2626;
-      transform: scale(1.05);
-    }
-
-    .active {
-      text-align: center;
-      font-size: 1.25rem;
-      font-weight: bold;
-    }
-
-    .active span {
-      color: #ef4444;
+      z-index: 100;
     }
   </style>
 </head>
-<body>
-  <div class="bot-buttons">
-    <button class="bot-button" onclick="handleBotClick('The Yorkshire Ripper')">The Yorkshire Ripper</button>
-    <button class="bot-button" onclick="handleBotClick('Huntley')">Huntley</button>
+<body class="flex items-center justify-center min-h-screen">
+  <div class="bot-menu absolute top-4 left-0 w-full flex justify-center space-x-8 text-3xl font-extrabold text-red-600 drop-shadow-md">
+    <button onclick="switchBot('huntley')" class="hover:underline">Ian Huntley</button>
+    <button onclick="switchBot('yorkshire')" class="hover:underline">Yorkshire Ripper</button>
+    <button onclick="switchBot('shannon')" class="hover:underline">Shannon Matthews</button>
+    <button onclick="switchBot('west')" class="hover:underline">Fred & Rose West</button>
   </div>
-  <div class="active" id="activeBotDisplay"></div>
 
-  <script>
-    const chatHistories = {};
+  <div id="draggable-window" class="draggable transparent-bg p-6 cursor-move rounded-lg shadow w-full max-w-2xl border no-border">
+    <div class="close-btn" onclick="window.close()">X</div>
+    <h1 class="text-2xl font-bold mb-2 text-center" id="bot-title">Huntley Simulator</h1>
+    <p class="text-sm text-center mb-4" id="bot-subtitle">Includes Maxine Carr Additional Murder Scenes</p>
+    <div id="chat-window" class="h-96 overflow-y-auto border p-2 mb-2 rounded bg-gray-50 bg-opacity-50"></div>
+    <div class="flex">
+      <input id="user-input" type="text" class="w-3/4 p-2 border rounded-l focus:outline-none" placeholder="Type your message...">
+      <button id="send-btn" class="w-20 bg-blue-500 text-white px-2 py-1 rounded-r hover:bg-blue-600 text-sm">Send</button>
+    </div>
+  </div>
 
-    function handleBotClick(bot) {
-      document.getElementById("activeBotDisplay").innerHTML = `Active Bot: <span>${bot}</span>`;
-      if (!chatHistories[bot]) {
-        chatHistories[bot] = [`Bot personality loaded: ${bot} persona`];
-      }
-      openChatWindow(bot);
-    }
+  <script type="text/javascript">
+    const dragEl = document.getElementById("draggable-window");
+    dragEl.style.position = "absolute";
+    dragEl.style.left = "50px";
+    dragEl.style.top = "100px";
+    let offsetX = 0, offsetY = 0, isDragging = false;
 
-    function openChatWindow(bot) {
-      const history = chatHistories[bot];
-      const chatWindow = window.open('', bot, 'width=600,height=700');
-      if (!chatWindow) return alert('Popup blocked. Enable popups and try again.');
+    dragEl.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      offsetX = e.clientX - dragEl.offsetLeft;
+      offsetY = e.clientY - dragEl.offsetTop;
+    });
 
-      chatWindow.document.write(`
-        <html>
-          <head>
-            <title>${bot} Chat</title>
-            <style>
-              body {
-                font-family: sans-serif;
-                padding: 20px;
-                background-color: #111;
-                color: white;
-              }
-              .header {
-                font-size: 24px;
-                font-weight: bold;
-                color: #61dafb;
-                margin-bottom: 20px;
-              }
-              .chat-box {
-                border: 1px solid #444;
-                padding: 10px;
-                height: 500px;
-                overflow-y: scroll;
-                background-color: #222;
-              }
-              .input-area {
-                margin-top: 10px;
-              }
-              input {
-                width: 100%;
-                padding: 10px;
-                border: none;
-                background-color: #333;
-                color: white;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header">Chat with ${bot}</div>
-            <div class="chat-box" id="chat-box">
-              ${history.map(line => `<div>${line}</div>`).join('')}
-            </div>
-            <div class="input-area">
-              <input type="text" placeholder="Type your message..." onkeypress="
-                if(event.key === 'Enter') {
-                  const input = event.target;
-                  const msg = input.value.trim();
-                  const box = document.getElementById('chat-box');
-                  if (msg.toUpperCase() === 'CLEAR') {
-                    window.opener.postMessage({ bot: '${bot}', type: 'clear' }, '*');
-                    location.reload();
-                    return;
-                  }
-                  box.innerHTML += '<div style=\\'margin-top:10px;\\'><strong>You:</strong> ' + msg + '</div>';
-                  window.opener.postMessage({ bot: '${bot}', type: 'message', msg }, '*');
-                  input.value = '';
-                }">
-            </div>
-          </body>
-        </html>
-      `);
-    }
-
-    window.addEventListener('message', (e) => {
-      const { bot, type, msg } = e.data;
-      if (type === 'clear') {
-        chatHistories[bot] = [`Bot personality loaded: ${bot} persona`];
-      } else if (type === 'message') {
-        chatHistories[bot].push(`<strong>You:</strong> ${msg}`);
+    document.addEventListener("mousemove", (e) => {
+      if (isDragging) {
+        dragEl.style.left = `${e.clientX - offsetX}px`;
+        dragEl.style.top = `${e.clientY - offsetY}px`;
       }
     });
+
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+
+    function switchBot(bot) {
+      localStorage.setItem('activeBot', bot);
+      location.reload();
+    }
+
+    const botName = localStorage.getItem("activeBot") || "huntley";
+    const chatWindow = document.getElementById("chat-window");
+    const input = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+    const chatKey = `chat-${botName}`;
+
+    function appendMessage(msg, from = "user") {
+      const div = document.createElement("div");
+      div.className = from === "user" ? "text-right mb-2 text-white" : "text-left mb-2 text-yellow-400";
+      div.textContent = msg;
+      chatWindow.appendChild(div);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function loadChat() {
+      const history = localStorage.getItem(chatKey);
+      if (history) {
+        const msgs = JSON.parse(history);
+        msgs.forEach(({ msg, from }) => appendMessage(msg, from));
+      }
+    }
+
+    function saveChat(msg, from) {
+      const history = JSON.parse(localStorage.getItem(chatKey) || "[]");
+      history.push({ msg, from });
+      localStorage.setItem(chatKey, JSON.stringify(history));
+    }
+
+    function handleSend() {
+  const text = input.value.trim();
+  if (text.toLowerCase() === "clear") {
+    localStorage.removeItem(chatKey);
+    chatWindow.innerHTML = "";
+    input.value = "";
+    return;
+  }
+  if (text) {
+    appendMessage(text, "user");
+    saveChat(text, "user");
+    input.value = "";
+
+    fetch("https://huntleyapi.onrender.com/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: text })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.response) {
+          appendMessage(data.response, "bot");
+          saveChat(data.response, "bot");
+        } else {
+          appendMessage("[No response from server]", "bot");
+        }
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        appendMessage("[Server error]", "bot");
+      });
+  }
+}
+
+    const titleMap = {
+      huntley: { title: "Huntley Simulator", subtitle: "Includes Maxine Carr Additional Murder Scenes" },
+      shannon: { title: "Karren Matthews", subtitle: "Mastermind of Shannon" },
+      yorkshire: { title: "The Yorkshire Ripper", subtitle: "Peter Sutcliff" },
+      west: { title: "Fred & Rose West", subtitle: "25 Cromwell Street" }
+    };
+
+    const activeBot = titleMap[botName] || titleMap.huntley;
+    document.getElementById("bot-title").textContent = activeBot.title;
+    document.getElementById("bot-subtitle").textContent = activeBot.subtitle;
+
+    loadChat();
   </script>
+  <script src="/script.js"></script>
 </body>
 </html>
