@@ -141,7 +141,7 @@ app.post('/api/chat', async (req, res) => {
             'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
           },
           body: JSON.stringify({
-            model: 'gpt-3.5-turbo',
+            model: 'gpt-4o', //gtp-3.5-turbo
             messages: [
               { role: 'system', content: 'You are Huntley, an AI assistant.' },
               { role: 'user', content: prompt }
