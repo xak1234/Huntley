@@ -26,10 +26,32 @@
       position: absolute;
       cursor: move;
     }
+    .close-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background-color: rgba(255, 0, 0, 0.8);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 100;
+    }
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
+  <div class="absolute top-4 left-4 z-50">
+    <select id="bot-selector" class="p-2 border rounded bg-white shadow">
+      <option value="huntley">Huntley</option>
+      <option value="yorkshire">Yorkshire Ripper</option>
+      <option value="shannon">Shannon Matthews</option>
+    </select>
+    <button onclick="openNewBotWindow()" class="ml-2 p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Open Bot</button>
+  </div>
+
   <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border">
+    <div class="close-btn" onclick="window.close()">X</div>
     <h1 class="text-lg font-bold mb-2 text-center">Huntley Simulator</h1>
     <p class="text-xs text-center mb-4">Includes Maxine Carr Additional Murder Scenes</p>
     <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
@@ -96,6 +118,59 @@
     document.addEventListener("mouseup", () => {
       isDragging = false;
     });
+
+    // Bot switching logic
+    function openNewBotWindow() {
+      const bot = document.getElementById('bot-selector').value;
+      const url = `${window.location.origin}/?bot=${bot}`;
+      window.open(url, '_blank', 'width=800,height=600,resizable=yes');
+    }
+
+    // Persist chat history per bot
+    const botName = new URLSearchParams(window.location.search).get("bot") || "huntley";
+    const chatWindow = document.getElementById("chat-window");
+    const input = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+    const chatKey = `chat-${botName}`;
+
+    function appendMessage(msg, from = "user") {
+      const div = document.createElement("div");
+      div.className = from === "user" ? "text-right mb-2" : "text-left mb-2 text-blue-700";
+      div.textContent = msg;
+      chatWindow.appendChild(div);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function loadChat() {
+      const history = localStorage.getItem(chatKey);
+      if (history) {
+        const msgs = JSON.parse(history);
+        msgs.forEach(({ msg, from }) => appendMessage(msg, from));
+      }
+    }
+
+    function saveChat(msg, from) {
+      const history = JSON.parse(localStorage.getItem(chatKey) || "[]");
+      history.push({ msg, from });
+      localStorage.setItem(chatKey, JSON.stringify(history));
+    }
+
+    sendBtn.addEventListener("click", () => {
+      const text = input.value.trim();
+      if (text) {
+        appendMessage(text, "user");
+        saveChat(text, "user");
+        input.value = "";
+        // Placeholder for bot reply
+        const reply = `Response from ${botName} bot.`;
+        setTimeout(() => {
+          appendMessage(reply, "bot");
+          saveChat(reply, "bot");
+        }, 500);
+      }
+    });
+
+    loadChat();
   </script>
   <script src="/script.js"></script>
 </body>
