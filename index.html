@@ -54,6 +54,19 @@
       50% { box-shadow: 0 0 20px rgba(231, 76, 60, 1), 0 0 40px rgba(231, 76, 60, 1); }
       100% { box-shadow: 0 0 5px rgba(231, 76, 60, 0.6), 0 0 10px rgba(231, 76, 60, 0.8); }
     }
+    /* Increase font size for chat output */
+    #chat-window p {
+      font-size: 14px;
+    }
+    /* Enhance input bar appearance */
+    #user-input {
+      position: relative;
+      caret-color: black; /* Ensure the default cursor is visible */
+    }
+    #user-input:focus {
+      border-color: #3b82f6; /* Blue border on focus to match Send button */
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); /* Subtle glow effect */
+    }
   </style>
 </head>
 <body class="flex items-start justify-center min-h-screen pt-6">
@@ -65,12 +78,12 @@
 
   <!-- Draggable Chat Window -->
   <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border overflow-hidden">
-    <h1 id="window-title" class="text-base font-semibold tracking-tight mb-1 text-center">Personality Chat</h1>
+    <h1 id="window-title" class="text-lg font-semibold tracking-tight mb-1 text-center">Personality Chat</h1>
     <p id="window-subtitle" class="text-xs text-center mb-3">Select a personality to begin</p>
     <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
     <div class="flex h-8">
-      <input id="user-input" type="text" class="flex-1 text-xs px-2 py-1 border rounded-l bg-white focus:outline-none" placeholder="Type your message...">
-      <button id="send-btn" class="bg-blue-500 text-white px-3 text-xs rounded-r hover:bg-blue-600">Send</button>
+      <input id="user-input" type="text" class="flex-1 text-sm px-2 py-1 border rounded-l bg-white focus:outline-none" placeholder="Type your message...">
+      <button id="send-btn" class="bg-blue-500 text-white px-3 text-sm rounded-r hover:bg-blue-600">Send</button>
     </div>
   </div>
 
