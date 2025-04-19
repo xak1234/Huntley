@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../'))); // serve frontend from root folder
+app.use(express.static(path.join(__dirname, 'index.html'))); // serve frontend from root folder
 
 // Load personality from docx
 let botBackground = 'Default Huntley persona';
