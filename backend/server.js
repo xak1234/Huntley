@@ -3,106 +3,201 @@ const fs = require('fs').promises;
 const path = require('path');
 const mammoth = require('mammoth');
 const cors = require('cors');
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args)); // node-fetch
-
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
+
+// Enable CORS for the static site
+app.use(cors({
+  origin: 'https://huntleyonline.onrender.com',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type'],
+}));
+console.log('✅ CORS enabled for https://huntleyonline.onrender.com');
 
 // Middleware
-app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
 
-// Load personality from docx
-let botBackground = 'Default Huntley persona';
-(async () => {
+// Validate API keys at startup
+if (!process.env.GEMINI_API_KEY) {
+  console.error('FATAL ERROR: GEMINI_API_KEY environment variable is not set!');
+  process.exit(1);
+}
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('WARNING: OPENAI_API_KEY environment variable is not set! OpenAI fallback will fail.');
+}
+
+// Load bot background from .docx
+let botBackground;
+async function loadBotBackground() {
   try {
-    const result = await mammoth.extractRawText({ path: path.join(__dirname, 'Soham.docx') });
-    botBackground = result.value.trim();
-    console.log('✅ Soham.docx loaded');
-  } catch (err) {
-    console.error('❌ Could not load Soham.docx:', err.message);
+    const docxPath = path.join(__dirname, 'Soham.docx');
+    const result = await mammoth.extractRawText({ path: docxPath });
+    botBackground = result.value; // Extracted text from .docx
+    console.log('✅ Bot background loaded successfully');
+  } catch (error) {
+    console.error('Error loading .docx file:', error);
+    botBackground = 'Default bot background: Huntley is a friendly and helpful AI assistant.';
   }
-})();
+}
+loadBotBackground();
 
-// Local chat history
-const historyFile = path.join(__dirname, 'chat_history.json');
-const loadHistory = async () => {
+// Chat history file
+const chatHistoryFile = path.join(__dirname, 'chat_history.json');
+async function loadChatHistory() {
   try {
-    const data = await fs.readFile(historyFile, 'utf8');
+    const data = await fs.readFile(chatHistoryFile, 'utf8');
     return JSON.parse(data);
-  } catch {
+  } catch (error) {
     return { messages: [] };
   }
-};
-const saveHistory = async (data) => {
-  await fs.writeFile(historyFile, JSON.stringify(data, null, 2));
-};
+}
+async function saveChatHistory(history) {
+  await fs.writeFile(chatHistoryFile, JSON.stringify(history, null, 2));
+}
 
-// Gemini chat endpoint
+// API Routes
+app.get('/api/chat-history', async (req, res) => {
+  console.log('📩 Received request for /api/chat-history');
+  const history = await loadChatHistory();
+  res.json(history);
+});
+
 app.post('/api/chat', async (req, res) => {
+  console.log('📩 Received request for /api/chat:', req.body);
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Message required' });
 
-  const history = await loadHistory();
-  history.messages.push({ sender: 'User', content: message });
+  // Load chat history
+  const history = await loadChatHistory();
 
+  // Add user message to history
+  history.messages.push({ sender: 'You', content: message });
+
+  // Prepare prompt with bot background and chat history
   const prompt = `
-You are Huntley. Stay in character.
-Background:
-${botBackground}
-
-Chat:
-${history.messages.map(m => `${m.sender}: ${m.content}`).join('\n')}
-Respond as Huntley:
-`;
+    You are Huntley, an AI assistant defined by the following background:
+    ${botBackground}
+    Previous conversation:
+    ${history.messages.map(msg => `${msg.sender}: ${msg.content}`).join('\n')}
+    User: ${message}
+    Respond as Huntley:
+  `;
 
   try {
-const gemini = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-    
-    const gemini = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024
+    // First, try the Gemini API
+    let botResponse;
+    try {
+      console.log('📞 Calling Gemini API...');
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: prompt }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              topP: 0.95,
+              topK: 40,
+              maxOutputTokens: 1024,
+            }
+          })
         }
-      })
-    });
+      );
 
-    if (!gemini.ok) {
-      const errText = await gemini.text();
-      throw new Error(`Gemini API failed (${gemini.status}): ${errText}`);
+      console.log(`📡 Gemini API Status Code: ${geminiResponse.status}`);
+      if (!geminiResponse.ok) {
+        const errorBody = await geminiResponse.text();
+        console.error(`Cannot access Gemini API: Status ${geminiResponse.status}, Body: ${errorBody}`);
+        throw new Error(`Gemini API request failed: ${geminiResponse.statusText}`);
+      }
+
+      const geminiData = await geminiResponse.json();
+      botResponse = geminiData.candidates[0].content.parts[0].text;
+      console.log('✅ Gemini API responded successfully');
+    } catch (geminiError) {
+      console.error('Cannot access Gemini API:', geminiError.message);
+
+      // Fallback to OpenAI API if Gemini fails
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('Cannot access OpenAI API: OpenAI API key not provided, cannot fallback');
+      }
+
+      console.log('📞 Falling back to OpenAI API...');
+      const openaiResponse = await fetch(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              { role: 'system', content: 'You are Huntley, an AI assistant.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 1024,
+          })
+        }
+      );
+
+      console.log(`📡 OpenAI API Status Code: ${openaiResponse.status}`);
+      if (!openaiResponse.ok) {
+        const errorBody = await openaiResponse.text();
+        console.error(`Cannot access OpenAI API: Status ${openaiResponse.status}, Body: ${errorBody}`);
+        throw new Error(`OpenAI API request failed: ${openaiResponse.statusText}`);
+      }
+
+      const openaiData = await openaiResponse.json();
+      botResponse = openaiData.choices[0].message.content;
+      console.log('✅ OpenAI API responded successfully');
     }
 
-    const data = await gemini.json();
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[No reply]';
+    // Add bot response to history
+    history.messages.push({ sender: 'Bot', content: botResponse });
+    await saveChatHistory(history);
 
-    history.messages.push({ sender: 'Bot', content: reply });
-    await saveHistory(history);
+    // Log the conversation
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      userMessage: message,
+      botResponse: botResponse,
+    };
+    console.log('💬 Conversation Log:', JSON.stringify(logEntry));
 
-    res.json({ response: reply });
-  } catch (err) {
-    console.error('❌ Gemini error:', err.message);
-    res.status(500).json({ error: 'Server error', details: err.message });
+    res.json({ response: botResponse });
+  } catch (error) {
+    console.error('Error generating response:', error.message);
+    res.status(500).json({ error: `Failed to generate response: ${error.message}` });
   }
 });
 
-// Health check
+// Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Huntley backend is alive' });
+  console.log('📩 Received request for /health');
+  res.status(200).json({ status: 'OK', message: 'Huntley server is running' });
 });
 
-// Fallback index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+// Basic root route
+app.get('/', (req, res) => {
+  console.log('📩 Received request for /');
+  res.send('Huntley server is running...');
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Huntley server running at http://localhost:${PORT}`);
+// Start server
+app.listen(port, () => {
+  console.log(`✅ Huntley server live at http://localhost:${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Render Hostname: ${process.env.RENDER_EXTERNAL_HOSTNAME || 'Not set'}`);
 });
