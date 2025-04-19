@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Huntley - Chat with Bot</title>
+  <title>Personality Chat</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="./styles.css">
   <style>
     body, html {
       margin: 0;
@@ -35,33 +34,25 @@
       margin-bottom: 20px;
     }
     .button-container button {
-      padding: 12px 24px;  /* Adjusted padding for bigger buttons */
-      background-color: #e74c3c;  /* Red color */
+      padding: 8px 16px; /* Slimmer buttons */
+      background-color: #e74c3c;
       color: white;
       border: none;
       cursor: pointer;
       transition: background-color 0.3s;
       text-align: center;
-      font-size: 14px; /* Slightly larger font size */
-      flex: 1;  /* Ensures equal sizing */
-      margin: 0 5px;  /* Small margin between buttons */
-      animation: pulse 2s infinite;  /* Add pulse effect */
+      font-size: 14px;
+      flex: 1;
+      margin: 0 10px; /* More space between buttons */
+      animation: pulse 2s infinite;
     }
     .button-container button:hover {
-      background-color: #c0392b;  /* Darker red on hover */
+      background-color: #c0392b;
     }
-
-    /* Glowing pulse effect */
     @keyframes pulse {
-      0% {
-        box-shadow: 0 0 5px rgba(231, 76, 60, 0.6), 0 0 10px rgba(231, 76, 60, 0.8);
-      }
-      50% {
-        box-shadow: 0 0 20px rgba(231, 76, 60, 1), 0 0 40px rgba(231, 76, 60, 1);
-      }
-      100% {
-        box-shadow: 0 0 5px rgba(231, 76, 60, 0.6), 0 0 10px rgba(231, 76, 60, 0.8);
-      }
+      0% { box-shadow: 0 0 5px rgba(231, 76, 60, 0.6), 0 0 10px rgba(231, 76, 60, 0.8); }
+      50% { box-shadow: 0 0 20px rgba(231, 76, 60, 1), 0 0 40px rgba(231, 76, 60, 1); }
+      100% { box-shadow: 0 0 5px rgba(231, 76, 60, 0.6), 0 0 10px rgba(231, 76, 60, 0.8); }
     }
   </style>
 </head>
@@ -74,8 +65,8 @@
 
   <!-- Draggable Chat Window -->
   <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border overflow-hidden">
-    <h1 id="window-title" class="text-base font-semibold tracking-tight mb-1 text-center">Huntley Simulator</h1>
-    <p id="window-subtitle" class="text-xs text-center mb-3">Includes Maxine Carr Additional Murder Scenes</p>
+    <h1 id="window-title" class="text-base font-semibold tracking-tight mb-1 text-center">Personality Chat</h1>
+    <p id="window-subtitle" class="text-xs text-center mb-3">Select a personality to begin</p>
     <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
     <div class="flex h-8">
       <input id="user-input" type="text" class="flex-1 text-xs px-2 py-1 border rounded-l bg-white focus:outline-none" placeholder="Type your message...">
@@ -84,68 +75,121 @@
   </div>
 
   <script type="text/javascript">
-    // Set the default personality to Huntley
+    // Store personality data
+    let personalityData = {
+      huntley: { prompt: '', background: '' },
+      ripper: { prompt: '', background: '' }
+    };
     let currentPersonality = 'huntley';
 
-    // Function to load the personality and its respective files asynchronously
+    // Function to load personality and update UI
     async function loadPersonality(personality) {
-      console.log('Loading personality:', personality); // Debug log
-      if (personality === 'huntley') {
-        await loadPromptData('./Huntleyprompt.txt');
-        await loadBackgroundData('./Huntley.txt');
-        // Change the title and subtitle for Huntley
-        document.getElementById('window-title').innerText = 'Huntley Simulator';
-        document.getElementById('window-subtitle').innerText = 'Includes Maxine Carr Additional Murder Scenes';
-      } else if (personality === 'ripper') {
-        await loadPromptData('./Yorkshireprompt.txt');
-        await loadBackgroundData('./Yorkshire.txt');
-        // Change the title and subtitle for Yorkshire Ripper
-        document.getElementById('window-title').innerText = 'The Yorkshire Ripper';
-        document.getElementById('window-subtitle').innerText = 'Peter Sutcliffe';
+      console.log('Loading personality:', personality);
+      try {
+        const titleEl = document.getElementById('window-title');
+        const subtitleEl = document.getElementById('window-subtitle');
+        if (!titleEl || !subtitleEl) {
+          console.error('Title or subtitle element not found');
+          return;
+        }
+
+        if (personality === 'huntley') {
+          personalityData.huntley.prompt = await loadPromptData('./Huntleyprompt.txt');
+          personalityData.huntley.background = await loadBackgroundData('./Huntley.txt');
+          titleEl.innerText = 'Huntley Simulator';
+          subtitleEl.innerText = 'Includes Maxine Carr Additional Murder Scenes';
+        } else if (personality === 'ripper') {
+          personalityData.ripper.prompt = await loadPromptData('./Yorkshireprompt.txt');
+          personalityData.ripper.background = await loadBackgroundData('./Yorkshire.txt');
+          titleEl.innerText = 'The Yorkshire Ripper';
+          subtitleEl.innerText = 'Peter Sutcliffe';
+        }
+        console.log(`Successfully loaded personality: ${personality}`, personalityData[personality]);
+        displayMessage(`Switched to ${personality} personality.`, 'system');
+      } catch (error) {
+        console.error(`Failed to load personality ${personality}: ${error}`);
+        displayMessage(`Error: Failed to load ${personality} data: ${error.message}`, 'error');
       }
     }
 
-    // Function to load the prompt data from a file asynchronously
+    // Function to load prompt data
     async function loadPromptData(filename) {
       try {
         console.log(`Loading prompt from: ${filename}`);
         const response = await fetch(filename);
+        console.log(`Response status: ${response.status} ${response.statusText}`);
         if (!response.ok) {
-          throw new Error(`Failed to load prompt data from ${filename}`);
+          throw new Error(`Failed to load prompt data from ${filename}: ${response.status} ${response.statusText}`);
         }
         const promptData = await response.text();
         console.log(`Prompt Data Loaded:`, promptData);
-        // You can now use this prompt data for the bot (e.g., updating the chat or bot's context)
+        return promptData;
       } catch (error) {
         console.error(`Error loading prompt data: ${error}`);
+        throw error;
       }
     }
 
-    // Function to load the background data from a file asynchronously
+    // Function to load background data
     async function loadBackgroundData(filename) {
       try {
         console.log(`Loading background from: ${filename}`);
         const response = await fetch(filename);
+        console.log(`Response status: ${response.status} ${response.statusText}`);
         if (!response.ok) {
-          throw new Error(`Failed to load background data from ${filename}`);
+          throw new Error(`Failed to load background data from ${filename}: ${response.status} ${response.statusText}`);
         }
         const backgroundData = await response.text();
         console.log(`Background Data Loaded:`, backgroundData);
-        // You can now use this background data to update the chatbot
+        return backgroundData;
       } catch (error) {
         console.error(`Error loading background data: ${error}`);
-        alert(`There was an issue loading the background data. Please check the file path or server configuration.`);
+        throw error;
       }
     }
 
-    // Event listener for Ian Huntley personality button
+    // Function to display messages in the chat window
+    function displayMessage(text, type = 'user') {
+      const chatWindow = document.getElementById('chat-window');
+      const message = document.createElement('p');
+      message.textContent = text;
+      if (type === 'user') {
+        message.style.color = 'black';
+      } else if (type === 'bot') {
+        message.style.color = 'blue';
+      } else if (type === 'error') {
+        message.style.color = 'red';
+      } else if (type === 'system') {
+        message.style.color = 'gray';
+        message.style.fontStyle = 'italic';
+      }
+      chatWindow.appendChild(message);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // Event listener for chat input
+    document.getElementById('send-btn').addEventListener('click', () => {
+      const userInput = document.getElementById('user-input').value.trim();
+      if (userInput) {
+        displayMessage(`You: ${userInput}`, 'user');
+        const data = personalityData[currentPersonality];
+        const response = data.prompt
+          ? `${data.prompt} You said: ${userInput}`
+          : `No prompt loaded for ${currentPersonality}.`;
+        displayMessage(`Bot: ${response}`, 'bot');
+        document.getElementById('user-input').value = '';
+      }
+    });
+
+    // Event listeners for personality buttons
     document.getElementById('huntley-btn').addEventListener('click', () => {
+      console.log('Huntley button clicked');
       currentPersonality = 'huntley';
       loadPersonality(currentPersonality);
     });
 
-    // Event listener for The Yorkshire Ripper personality button
     document.getElementById('ripper-btn').addEventListener('click', () => {
+      console.log('Ripper button clicked');
       currentPersonality = 'ripper';
       loadPersonality(currentPersonality);
     });
@@ -155,27 +199,32 @@
     let offsetX = 0, offsetY = 0, isDragging = false;
 
     dragEl.addEventListener("mousedown", (e) => {
-      if (e.target === dragEl) {
+      if (!e.target.closest('input, button')) {
         isDragging = true;
         offsetX = e.clientX - dragEl.getBoundingClientRect().left;
         offsetY = e.clientY - dragEl.getBoundingClientRect().top;
         dragEl.style.position = 'absolute';
-        dragEl.style.zIndex = 1000;  // Ensure it's on top of other elements
+        dragEl.style.zIndex = 1000;
       }
     });
 
     document.addEventListener("mousemove", (e) => {
       if (isDragging) {
-        dragEl.style.left = `${e.clientX - offsetX}px`;
-        dragEl.style.top = `${e.clientY - offsetY}px`;
+        let newLeft = e.clientX - offsetX;
+        let newTop = e.clientY - offsetY;
+        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - dragEl.offsetWidth));
+        newTop = Math.max(0, Math.min(newTop, window.innerHeight - dragEl.offsetHeight));
+        dragEl.style.left = `${newLeft}px`;
+        dragEl.style.top = `${newTop}px`;
       }
     });
 
     document.addEventListener("mouseup", () => {
       isDragging = false;
     });
-  </script>
 
-  <script src="./script.js"></script>
+    // Initialize with default personality
+    loadPersonality(currentPersonality);
+  </script>
 </body>
 </html>
