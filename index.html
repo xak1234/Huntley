@@ -72,10 +72,14 @@
       return gk_fileData[filename] || "";
     }
 
-    const dragEl = document.getElementById("draggable-window");
+    const const dragEl = document.getElementById("draggable-window");
+dragEl.style.position = "absolute";
+dragEl.style.left = "50px";
+dragEl.style.top = "100px";
     let offsetX = 0, offsetY = 0, isDragging = false;
 
-    dragEl.addEventListener("mousedown", (e) => {
+    document.getElementById("draggable-window").addEventListener("mousedown", (e) => {
+  if (!e.target.closest('#bot-title') && !e.target.closest('#bot-subtitle')) return;
       isDragging = true;
       offsetX = e.clientX - dragEl.offsetLeft;
       offsetY = e.clientY - dragEl.offsetTop;
@@ -94,6 +98,8 @@
 
     function switchBot(bot) {
   localStorage.setItem('activeBot', bot);
+  document.getElementById("chat-window").innerHTML = "";
+  document.getElementById("user-input").value = "";
   location.reload();
 }/?bot=${bot}`;
       window.open(url, '_blank', 'width=800,height=600,resizable=yes');
