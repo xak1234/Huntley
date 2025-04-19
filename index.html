@@ -26,18 +26,19 @@
       position: absolute;
       cursor: move;
       resize: both;
-      overflow: auto;
+      transform: scale(0.75);
+      transform-origin: top left;
     }
   </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
-  <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border">
+<body class="flex items-start justify-center min-h-screen pt-6">
+  <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border overflow-hidden">
     <h1 class="text-base font-semibold tracking-tight mb-1 text-center">Huntley Simulator</h1>
     <p class="text-xs text-center mb-3">Includes Maxine Carr Additional Murder Scenes</p>
     <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
-    <div class="flex h-6">
-      <input id="user-input" type="text" class="flex-1 text-xs px-1 border rounded-l focus:outline-none" placeholder="Type your message...">
-      <button id="send-btn" class="bg-blue-500 text-white px-2 text-xs rounded-r hover:bg-blue-600">Send</button>
+    <div class="flex h-8">
+      <input id="user-input" type="text" class="flex-1 text-xs px-2 py-1 border rounded-l bg-white focus:outline-none" placeholder="Type your message...">
+      <button id="send-btn" class="bg-blue-500 text-white px-3 text-xs rounded-r hover:bg-blue-600">Send</button>
     </div>
   </div>
 
