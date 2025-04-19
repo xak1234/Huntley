@@ -4,75 +4,60 @@ const path = require('path');
 const mammoth = require('mammoth');
 const cors = require('cors');
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-// CORS for frontend
-app.use(cors({
-  origin: 'https://huntley.onrender.com',
-  methods: ['POST'],
-  allowedHeaders: ['Content-Type'],
-}));
-
+// Middleware
+app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public'))); // Serve frontend
 
-// Check keys
-if (!process.env.GEMINI_API_KEY) {
-  console.error('❌ GEMINI_API_KEY missing!');
-  process.exit(1);
-}
-
-// Load background
-let botBackground = 'Default Huntley AI background.';
+// Load .docx bot background
+let botBackground = 'Default bot background';
 (async () => {
   try {
-    const docxPath = path.join(__dirname, 'Soham.docx');
-    const result = await mammoth.extractRawText({ path: docxPath });
+    const result = await mammoth.extractRawText({ path: path.join(__dirname, 'Soham.docx') });
     botBackground = result.value.trim();
-    console.log('✅ Bot background loaded');
+    console.log('✅ Loaded Huntley persona');
   } catch (err) {
-    console.error('Error loading background:', err);
+    console.error('❌ Failed to load Soham.docx:', err.message);
   }
 })();
 
-// Chat history
-const chatFile = path.join(__dirname, 'chat_history.json');
+// Chat history (optional persistence)
+const historyPath = path.join(__dirname, 'chat_history.json');
 const loadHistory = async () => {
   try {
-    const data = await fs.readFile(chatFile, 'utf8');
+    const data = await fs.readFile(historyPath, 'utf8');
     return JSON.parse(data);
   } catch {
     return { messages: [] };
   }
 };
-const saveHistory = async (history) => {
-  await fs.writeFile(chatFile, JSON.stringify(history, null, 2));
+const saveHistory = async (data) => {
+  await fs.writeFile(historyPath, JSON.stringify(data, null, 2));
 };
 
-// Gemini POST endpoint
-
+// POST /api/chat
 app.post('/api/chat', async (req, res) => {
-  ...
-});
-
-//app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
-  if (!message) return res.status(400).json({ error: 'Message required' });
+  if (!message) return res.status(400).json({ error: 'No message received' });
 
   const history = await loadHistory();
-  history.messages.push({ sender: 'You', content: message });
+  history.messages.push({ sender: 'User', content: message });
 
-//  const prompt = `
-//You are Huntley. Stay in character at all times.
+  const prompt = `
+You are Huntley. Stay in character always.
 Background:
 ${botBackground}
 
 Conversation:
 ${history.messages.map(m => `${m.sender}: ${m.content}`).join('\n')}
+
 Respond as Huntley:
 `;
 
   try {
-    const geminiResponse = await fetch(
+    const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
@@ -81,34 +66,40 @@ Respond as Huntley:
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 1024,
-          },
-        }),
+            topP: 0.95,
+            maxOutputTokens: 1024
+          }
+        })
       }
     );
 
-    if (!geminiResponse.ok) {
-      const errText = await geminiResponse.text();
-      console.error('❌ Gemini API Error:', errText);
+    if (!geminiRes.ok) {
+      const errorText = await geminiRes.text();
+      console.error(`Gemini API failed: ${geminiRes.status}`, errorText);
       return res.status(500).json({ error: 'Gemini API failed' });
     }
 
-    const data = await geminiResponse.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '[No response]';
+    const data = await geminiRes.json();
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[No response]';
     history.messages.push({ sender: 'Bot', content: reply });
     await saveHistory(history);
     res.json({ response: reply });
   } catch (err) {
-    console.error('❌ Error generating response:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Server error:', err.message);
+    res.status(500).json({ error: 'Failed to generate response' });
   }
 });
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Huntley server is running' });
+  res.json({ status: 'OK', message: 'Server is running' });
 });
 
-app.listen(port, () => {
-  console.log(`✅ Server live on http://localhost:${port}`);
+// SPA fallback
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ Server listening on port ${PORT}`);
 });
