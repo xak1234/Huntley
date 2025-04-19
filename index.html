@@ -1,62 +1,49 @@
-<script type="text/javascript">
-<input type="text" id="inputBox" placeholder="">
-        
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Huntley - Chat with Bot</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
-</head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
-    <h1 class="text-2xl font-bold mb-4 text-center">Huntley Simulator - Includes Maxine Carr Additional Murder Scenes</h1>
-    <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50"></div>
-    <div class="flex">
-      <input id="user-input" type="text" class="flex-1 p-2 border rounded-l focus:outline-none" placeholder="Type your message...">
-      <button id="send-btn" class="bg-blue-500 text-white p-2 rounded-r hover:bg-blue-600">Send</button>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huntley Simulator</title>
+    <link rel="stylesheet" href="styles.css"> </head>
+<body>
+    <div class="chat-container">
+        <div id="chatWindow" class="chat-window">
+            <div class="user-message">You: Hi</div>
+            <div class="bot-message">Oi. How's it goin'?</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="inputBox" placeholder="">
+            <button id="sendButton">Send</button>
+        </div>
     </div>
-  </div>
-  <script src="/script.js"></script>
+
+    <script>
+        // JavaScript for handling user input and displaying messages
+        // (This part is not directly related to the CSS changes)
+        const inputBox = document.getElementById('inputBox');
+        const chatWindow = document.getElementById('chatWindow');
+        const sendButton = document.getElementById('sendButton');
+
+        // Example: Sending a message
+        sendButton.addEventListener('click', () => {
+            const message = inputBox.value;
+            if (message.trim() !== '') {
+                appendMessage('You:', message, 'user-message');
+                inputBox.value = '';
+                // Simulate bot response (you'll need your actual bot logic here)
+                setTimeout(() => {
+                    appendMessage('Bot:', "Simulated bot response.", 'bot-message');
+                }, 500);
+            }
+        });
+
+        function appendMessage(sender, text, className) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add(className);
+            messageDiv.textContent = `${sender} ${text}`;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to the bottom
+        }
+    </script>
 </body>
 </html>
