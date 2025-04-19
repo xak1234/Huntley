@@ -49,7 +49,12 @@ const saveHistory = async (history) => {
 };
 
 // Gemini POST endpoint
+
 app.post('/api/chat', async (req, res) => {
+  ...
+});
+
+
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Message required' });
 
