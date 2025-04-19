@@ -32,7 +32,7 @@ body {
     padding: 10px;
     margin-bottom: 1rem;
     border-radius: 0.5rem;
-    background-color: rgba(30, 30, 30, 0.5); /* 50% transparent charcoal black */
+    background-color: rgba(30, 30, 30, 0.7); /* 50% transparent charcoal black */
     background-colour: transparent !impotrant!
     color: #f7fafc; /* Bright white text inside window */
 }
