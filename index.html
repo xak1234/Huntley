@@ -4,7 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Huntley Simulator</title>
-    <link rel="stylesheet" href="styles.css"> </head>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0; /* Optional background color for the page */
+        }
+
+        .chat-container {
+            width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            background-color: #fff; /* Optional background for the chat container */
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chatWindow {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: transparent !important; /* Transparent chat window */
+        }
+
+        .user-message {
+            text-align: right;
+            margin-bottom: 5px;
+        }
+
+        .bot-message {
+            text-align: left;
+            margin-bottom: 5px;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 5px;
+            border-top: 1px solid #eee;
+        }
+
+        #inputBox {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid black; /* Thin black border */
+            background-color: transparent; /* Transparent input background */
+            margin-right: 5px;
+        }
+
+        #inputBox::placeholder {
+            white-space: pre-wrap !important;
+        }
+
+        #inputBox::placeholder::before {
+            content: "Huntley Simulator" !important;
+            font-size: 0.9em !important;
+            display: block !important;
+        }
+
+        #inputBox::placeholder::after {
+            content: "Bonus pack - Includes Maxine Carr and additional murder" !important;
+            font-size: 0.6em !important;
+            color: #888 !important;
+            display: block !important;
+        }
+
+        #sendButton {
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
 <body>
     <div class="chat-container">
         <div id="chatWindow" class="chat-window">
@@ -18,21 +92,19 @@
     </div>
 
     <script>
-        // JavaScript for handling user input and displaying messages
-        // (This part is not directly related to the CSS changes)
         const inputBox = document.getElementById('inputBox');
         const chatWindow = document.getElementById('chatWindow');
         const sendButton = document.getElementById('sendButton');
 
-        // Example: Sending a message
         sendButton.addEventListener('click', () => {
             const message = inputBox.value;
             if (message.trim() !== '') {
                 appendMessage('You:', message, 'user-message');
                 inputBox.value = '';
-                // Simulate bot response (you'll need your actual bot logic here)
+                // Simulate bot response (replace with your actual bot logic)
                 setTimeout(() => {
-                    appendMessage('Bot:', "Simulated bot response.", 'bot-message');
+                    // Remove "Bot:" prefix here
+                    appendMessage('', "Simulated bot response.", 'bot-message');
                 }, 500);
             }
         });
@@ -40,9 +112,9 @@
         function appendMessage(sender, text, className) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add(className);
-            messageDiv.textContent = `${sender} ${text}`;
+            messageDiv.textContent = `${sender} ${text}`.trimStart(); // Remove leading space if sender is empty
             chatWindow.appendChild(messageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to the bottom
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
     </script>
 </body>
