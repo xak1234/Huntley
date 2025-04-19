@@ -52,8 +52,8 @@
 
   <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border">
     <div class="close-btn" onclick="window.close()">X</div>
-    <h1 class="text-lg font-bold mb-2 text-center">Huntley Simulator</h1>
-    <p class="text-xs text-center mb-4">Includes Maxine Carr Additional Murder Scenes</p>
+    <h1 class="text-lg font-bold mb-2 text-center" id="bot-title">Huntley Simulator</h1>
+<p class="text-xs text-center mb-4" id="bot-subtitle">Includes Maxine Carr Additional Murder Scenes</p>
     <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
     <div class="flex">
       <input id="user-input" type="text" class="flex-1 p-2 border rounded-l focus:outline-none" placeholder="Type your message...">
@@ -162,7 +162,13 @@
         saveChat(text, "user");
         input.value = "";
         // Placeholder for bot reply
-        const reply = `Response from ${botName} bot.`;
+        const promptMap = {
+  huntley: "You are Ian Huntley...", // Add actual Huntley prompt here
+  shannon: "You are Karen Matthews, a 33-year-old unemployed mother from Dewsbury, West Yorkshire, in 2008...",
+  yorkshire: "You are Peter Sutcliffe, a 32-year-old lorry driver from Bradford, West Yorkshire, in the late 1970s..."
+};
+
+const reply = promptMap[botName] || "Response from bot.";
         setTimeout(() => {
           appendMessage(reply, "bot");
           saveChat(reply, "bot");
@@ -170,7 +176,17 @@
       }
     });
 
-    loadChat();
+    const titleMap = {
+  huntley: { title: "Huntley Simulator", subtitle: "Includes Maxine Carr Additional Murder Scenes" },
+  shannon: { title: "Karren Matthews", subtitle: "Mastermind of Shannon" },
+  yorkshire: { title: "The Yorkshire Ripper", subtitle: "Peter Sutcliff" }
+};
+
+const activeBot = titleMap[botName] || titleMap.huntley;
+document.getElementById("bot-title").textContent = activeBot.title;
+document.getElementById("bot-subtitle").textContent = activeBot.subtitle;
+
+loadChat();
   </script>
   <script src="/script.js"></script>
 </body>
