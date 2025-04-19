@@ -8,52 +8,76 @@
   <link rel="stylesheet" href="/styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    .bot-menu button {
-      transition: all 0.3s ease-in-out;
+    body, html {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background-color: transparent !important;
+      user-select: none;
     }
-    .bot-menu button:hover {
-      text-shadow: 0 0 5px rgba(255, 0, 0, 0.7);
-      transform: scale(1.1);
+    .no-border {
+      border-width: 1px;
     }
-    .close-btn {
+    .transparent-bg {
+      background-color: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+    }
+    .draggable {
       position: absolute;
-      top: 0.25rem;
-      right: 0.25rem;
-      background-color: rgba(255, 0, 0, 0.8);
-      color: white;
-      padding: 0.1rem 0.25rem;
-      border-radius: 0.25rem;
-      font-size: 0.6rem;
-      font-weight: normal;
-      cursor: pointer;
-      z-index: 100;
+      cursor: move;
     }
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-  <div class="bot-menu absolute top-4 left-0 w-full flex justify-center space-x-8 text-3xl font-extrabold text-red-600 drop-shadow-md">
-    <button onclick="switchBot('huntley')" class="hover:underline">Ian Huntley</button>
-    <button onclick="switchBot('yorkshire')" class="hover:underline">Yorkshire Ripper</button>
-    <button onclick="switchBot('shannon')" class="hover:underline">Shannon Matthews</button>
-    <button onclick="switchBot('west')" class="hover:underline">Fred & Rose West</button>
-  </div>
-
-  <div id="draggable-window" class="draggable transparent-bg p-1 cursor-move rounded-lg shadow w-full max-w-2xl border no-border">
-    <div class="close-btn" onclick="window.close()">X</div>
-    <h1 class="text-lg font-semibold tracking-wide text-center uppercase" id="bot-title">Huntley Simulator</h1>
-    <p class="text-xs text-center font-semibold mb-2" id="bot-subtitle">Includes Maxine Carr Additional Murder Scenes</p>
-    <div id="chat-window" class="h-96 overflow-y-auto border p-2 mb-2 rounded bg-gray-50 bg-opacity-50"></div>
+  <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border">
+    <h1 class="text-lg font-bold mb-2 text-center">Huntley Simulator</h1>
+    <p class="text-xs text-center mb-4">Includes Maxine Carr Additional Murder Scenes</p>
+    <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
     <div class="flex">
-      <input id="user-input" type="text" class="w-3/4 p-2 border rounded-l focus:outline-none" placeholder="Type your message...">
-      <button id="send-btn" class="w-20 bg-blue-500 text-white px-2 py-1 rounded-r hover:bg-blue-600 text-sm">Send</button>
+      <input id="user-input" type="text" class="flex-1 p-2 border rounded-l focus:outline-none" placeholder="Type your message...">
+      <button id="send-btn" class="bg-blue-500 text-white p-2 rounded-r hover:bg-blue-600">Send</button>
     </div>
   </div>
 
   <script type="text/javascript">
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+
+    // Make window draggable
     const dragEl = document.getElementById("draggable-window");
-    dragEl.style.position = "absolute";
-    dragEl.style.left = "50px";
-    dragEl.style.top = "100px";
     let offsetX = 0, offsetY = 0, isDragging = false;
 
     dragEl.addEventListener("mousedown", (e) => {
@@ -72,88 +96,6 @@
     document.addEventListener("mouseup", () => {
       isDragging = false;
     });
-
-    function switchBot(bot) {
-      localStorage.setItem('activeBot', bot);
-      location.reload();
-    }
-
-    const botName = localStorage.getItem("activeBot") || "huntley";
-    const chatWindow = document.getElementById("chat-window");
-    const input = document.getElementById("user-input");
-    const sendBtn = document.getElementById("send-btn");
-    const chatKey = `chat-${botName}`;
-
-    function appendMessage(msg, from = "user") {
-      const div = document.createElement("div");
-      div.className = from === "user" ? "text-right mb-2 text-white" : "text-left mb-2 text-yellow-400";
-      div.textContent = msg;
-      chatWindow.appendChild(div);
-      chatWindow.scrollTop = chatWindow.scrollHeight;
-    }
-
-    function loadChat() {
-      const history = localStorage.getItem(chatKey);
-      if (history) {
-        const msgs = JSON.parse(history);
-        msgs.forEach(({ msg, from }) => appendMessage(msg, from));
-      }
-    }
-
-    function saveChat(msg, from) {
-      const history = JSON.parse(localStorage.getItem(chatKey) || "[]");
-      history.push({ msg, from });
-      localStorage.setItem(chatKey, JSON.stringify(history));
-    }
-
-    function handleSend() {
-  const text = input.value.trim();
-  if (text.toLowerCase() === "clear") {
-    localStorage.removeItem(chatKey);
-    chatWindow.innerHTML = "";
-    input.value = "";
-    return;
-  }
-  if (text) {
-    appendMessage(text, "user");
-    saveChat(text, "user");
-    input.value = "";
-
-    fetch("https://huntleyonline.onrender.com/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ message: text })
-    })
-      .then(response => response.json())
-      .then(data => {
-        if (data.response) {
-          appendMessage(data.response, "bot");
-          saveChat(data.response, "bot");
-        } else {
-          appendMessage("[No response from server]", "bot");
-        }
-      })
-      .catch(err => {
-        console.error("Error:", err);
-        appendMessage("[Server error]", "bot");
-      });
-  }
-}
-
-    const titleMap = {
-      huntley: { title: "Huntley Simulator", subtitle: "Includes Maxine Carr Additional Murder Scenes" },
-      shannon: { title: "Karren Matthews", subtitle: "Mastermind of Shannon" },
-      yorkshire: { title: "The Yorkshire Ripper", subtitle: "Peter Sutcliff" },
-      west: { title: "Fred & Rose West", subtitle: "25 Cromwell Street" }
-    };
-
-    const activeBot = titleMap[botName] || titleMap.huntley;
-    document.getElementById("bot-title").textContent = activeBot.title;
-    document.getElementById("bot-subtitle").textContent = activeBot.subtitle;
-
-    loadChat();
   </script>
   <script src="/script.js"></script>
 </body>
