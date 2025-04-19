@@ -17,6 +17,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 
 // Load background from docx
