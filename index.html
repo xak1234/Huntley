@@ -29,9 +29,36 @@
       transform: scale(0.75);
       transform-origin: top left;
     }
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .button-container button {
+      padding: 8px 16px;  /* Smaller padding */
+      background-color: #e74c3c;  /* Red color */
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      text-align: center;
+      font-size: 12px; /* Smaller font size */
+      flex: 1;  /* Ensures equal sizing */
+      margin: 0 5px;  /* Small margin between buttons */
+    }
+    .button-container button:hover {
+      background-color: #c0392b;  /* Darker red on hover */
+    }
   </style>
 </head>
 <body class="flex items-start justify-center min-h-screen pt-6">
+  <!-- Personality Selection Buttons -->
+  <div class="button-container">
+    <button id="huntley-btn" class="text-xs font-semibold rounded-lg">Huntley Personality</button>
+    <button id="ripper-btn" class="text-xs font-semibold rounded-lg">Yorkshire Ripper Personality</button>
+  </div>
+
+  <!-- Draggable Chat Window -->
   <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border overflow-hidden">
     <h1 class="text-base font-semibold tracking-tight mb-1 text-center">Huntley Simulator</h1>
     <p class="text-xs text-center mb-3">Includes Maxine Carr Additional Murder Scenes</p>
@@ -43,41 +70,64 @@
   </div>
 
   <script type="text/javascript">
-    var gk_isXlsx = false;
-    var gk_xlsxFileLookup = {};
-    var gk_fileData = {};
+    // Set the default personality to Huntley
+    let currentPersonality = 'huntley';
 
-    function filledCell(cell) {
-      return cell !== '' && cell != null;
-    }
-
-    function loadFileData(filename) {
-      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-        try {
-          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-          var firstSheetName = workbook.SheetNames[0];
-          var worksheet = workbook.Sheets[firstSheetName];
-
-          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-          var filteredData = jsonData.filter(row => row.some(filledCell));
-
-          var headerRowIndex = filteredData.findIndex((row, index) =>
-            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-          );
-          if (headerRowIndex === -1 || headerRowIndex > 25) {
-            headerRowIndex = 0;
-          }
-
-          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-          return csv;
-        } catch (e) {
-          console.error(e);
-          return "";
-        }
+    // Function to load the personality and its respective files asynchronously
+    async function loadPersonality(personality) {
+      if (personality === 'huntley') {
+        await loadPromptData('/Huntleyprompt.txt');
+        await loadBackgroundData('/Huntley.txt');
+      } else if (personality === 'ripper') {
+        await loadPromptData('/Yorkshireprompt.txt');
+        await loadBackgroundData('/Yorkshire.txt');
       }
-      return gk_fileData[filename] || "";
     }
+
+    // Function to load the prompt data from a file asynchronously
+    async function loadPromptData(filename) {
+      try {
+        console.log(`Loading prompt from: ${filename}`);
+        const response = await fetch(filename);
+        if (!response.ok) {
+          throw new Error(`Failed to load prompt data from ${filename}`);
+        }
+        const promptData = await response.text();
+        console.log(`Prompt Data Loaded:`, promptData);
+        // You can now use this prompt data for the bot (e.g., updating the chat or bot's context)
+      } catch (error) {
+        console.error(`Error loading prompt data: ${error}`);
+      }
+    }
+
+    // Function to load the background data from a file asynchronously
+    async function loadBackgroundData(filename) {
+      try {
+        console.log(`Loading background from: ${filename}`);
+        const response = await fetch(filename);
+        if (!response.ok) {
+          throw new Error(`Failed to load background data from ${filename}`);
+        }
+        const backgroundData = await response.text();
+        console.log(`Background Data Loaded:`, backgroundData);
+        // You can now use this background data to update the chatbot
+      } catch (error) {
+        console.error(`Error loading background data: ${error}`);
+        alert(`There was an issue loading the background data. Please check the file path or server configuration.`);
+      }
+    }
+
+    // Event listener for Huntley personality button
+    document.getElementById('huntley-btn').addEventListener('click', () => {
+      currentPersonality = 'huntley';
+      loadPersonality(currentPersonality);
+    });
+
+    // Event listener for The Yorkshire Ripper personality button
+    document.getElementById('ripper-btn').addEventListener('click', () => {
+      currentPersonality = 'ripper';
+      loadPersonality(currentPersonality);
+    });
 
     // Make window draggable
     const dragEl = document.getElementById("draggable-window");
@@ -102,6 +152,7 @@
       isDragging = false;
     });
   </script>
+
   <script src="/script.js"></script>
 </body>
 </html>
