@@ -11,6 +11,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname)); // Serve everything from root
 
+app.use(cors({
+  origin: 'https://huntleyonline.onrender.com',
+  methods: ['POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
+
+
 // Load background from docx
 let botBackground = 'Default Huntley persona';
 (async () => {
