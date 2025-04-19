@@ -35,33 +35,47 @@
       margin-bottom: 20px;
     }
     .button-container button {
-      padding: 8px 16px;  /* Smaller padding */
+      padding: 12px 24px;  /* Adjusted padding for bigger buttons */
       background-color: #e74c3c;  /* Red color */
       color: white;
       border: none;
       cursor: pointer;
       transition: background-color 0.3s;
       text-align: center;
-      font-size: 12px; /* Smaller font size */
+      font-size: 14px; /* Slightly larger font size */
       flex: 1;  /* Ensures equal sizing */
       margin: 0 5px;  /* Small margin between buttons */
+      animation: pulse 2s infinite;  /* Add pulse effect */
     }
     .button-container button:hover {
       background-color: #c0392b;  /* Darker red on hover */
+    }
+
+    /* Glowing pulse effect */
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 5px rgba(231, 76, 60, 0.6), 0 0 10px rgba(231, 76, 60, 0.8);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(231, 76, 60, 1), 0 0 40px rgba(231, 76, 60, 1);
+      }
+      100% {
+        box-shadow: 0 0 5px rgba(231, 76, 60, 0.6), 0 0 10px rgba(231, 76, 60, 0.8);
+      }
     }
   </style>
 </head>
 <body class="flex items-start justify-center min-h-screen pt-6">
   <!-- Personality Selection Buttons -->
   <div class="button-container">
-    <button id="huntley-btn" class="text-xs font-semibold rounded-lg">Huntley Personality</button>
-    <button id="ripper-btn" class="text-xs font-semibold rounded-lg">Yorkshire Ripper Personality</button>
+    <button id="huntley-btn" class="text-xs font-semibold rounded-lg">Ian Huntley</button>
+    <button id="ripper-btn" class="text-xs font-semibold rounded-lg">Yorkshire Ripper</button>
   </div>
 
   <!-- Draggable Chat Window -->
   <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border overflow-hidden">
-    <h1 class="text-base font-semibold tracking-tight mb-1 text-center">Huntley Simulator</h1>
-    <p class="text-xs text-center mb-3">Includes Maxine Carr Additional Murder Scenes</p>
+    <h1 id="window-title" class="text-base font-semibold tracking-tight mb-1 text-center">Huntley Simulator</h1>
+    <p id="window-subtitle" class="text-xs text-center mb-3">Includes Maxine Carr Additional Murder Scenes</p>
     <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
     <div class="flex h-8">
       <input id="user-input" type="text" class="flex-1 text-xs px-2 py-1 border rounded-l bg-white focus:outline-none" placeholder="Type your message...">
@@ -76,11 +90,17 @@
     // Function to load the personality and its respective files asynchronously
     async function loadPersonality(personality) {
       if (personality === 'huntley') {
-        await loadPromptData('/Huntleyprompt.txt');
-        await loadBackgroundData('/Huntley.txt');
+        await loadPromptData('./Huntleyprompt.txt');
+        await loadBackgroundData('./Huntley.txt');
+        // Change the title and subtitle for Huntley
+        document.getElementById('window-title').innerText = 'Huntley Simulator';
+        document.getElementById('window-subtitle').innerText = 'Includes Maxine Carr Additional Murder Scenes';
       } else if (personality === 'ripper') {
-        await loadPromptData('/Yorkshireprompt.txt');
-        await loadBackgroundData('/Yorkshire.txt');
+        await loadPromptData('./Yorkshireprompt.txt');
+        await loadBackgroundData('./Yorkshire.txt');
+        // Change the title and subtitle for Yorkshire Ripper
+        document.getElementById('window-title').innerText = 'The Yorkshire Ripper';
+        document.getElementById('window-subtitle').innerText = 'Peter Sutcliffe';
       }
     }
 
@@ -117,7 +137,7 @@
       }
     }
 
-    // Event listener for Huntley personality button
+    // Event listener for Ian Huntley personality button
     document.getElementById('huntley-btn').addEventListener('click', () => {
       currentPersonality = 'huntley';
       loadPersonality(currentPersonality);
@@ -136,8 +156,10 @@
     dragEl.addEventListener("mousedown", (e) => {
       if (e.target === dragEl) {
         isDragging = true;
-        offsetX = e.clientX - dragEl.offsetLeft;
-        offsetY = e.clientY - dragEl.offsetTop;
+        offsetX = e.clientX - dragEl.getBoundingClientRect().left;
+        offsetY = e.clientY - dragEl.getBoundingClientRect().top;
+        dragEl.style.position = 'absolute';
+        dragEl.style.zIndex = 1000;  // Ensure it's on top of other elements
       }
     });
 
@@ -153,6 +175,6 @@
     });
   </script>
 
-  <script src="/script.js"></script>
+  <script src="./script.js"></script>
 </body>
 </html>
