@@ -7,7 +7,7 @@ body {
     min-height: 100vh;
     margin: 0;
     padding: 20px;
-    background-image: url('/hunt.jpg'); /* Path to your image */
+    background-image: url('backend/hunt.jpg'); /* Path to your image */
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center center;
