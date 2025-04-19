@@ -86,7 +86,7 @@
 
     function appendMessage(msg, from = "user") {
       const div = document.createElement("div");
-      div.className = from === "user" ? "text-right mb-2" : "text-left mb-2 text-blue-700";
+      div.className = from === "user" ? "text-right mb-2 text-white" : "text-left mb-2 text-yellow-400";
       div.textContent = msg;
       chatWindow.appendChild(div);
       chatWindow.scrollTop = chatWindow.scrollHeight;
