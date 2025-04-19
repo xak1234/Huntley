@@ -49,15 +49,20 @@ const saveHistory = async (history) => {
 };
 
 // Gemini POST endpoint
+
 app.post('/api/chat', async (req, res) => {
+  ...
+});
+
+//app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Message required' });
 
   const history = await loadHistory();
   history.messages.push({ sender: 'You', content: message });
 
-  const prompt = `
-You are Huntley. Stay in character at all times.
+//  const prompt = `
+//You are Huntley. Stay in character at all times.
 Background:
 ${botBackground}
 
