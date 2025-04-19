@@ -5,6 +5,7 @@ const mammoth = require('mammoth');
 const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const fetch = require('node-fetch');
 
 // Middleware
 app.use(cors());
