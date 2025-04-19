@@ -119,28 +119,28 @@
     saveChat(text, "user");
     input.value = "";
 
-    const promptMap = {
-      huntley: "Ian Huntley...",
-      shannon: "Karen Matthews, a 33-year-old unemployed mother from Dewsbury, West Yorkshire, in 2008...",
-      yorkshire: "Peter Sutcliffe, a 32-year-old lorry driver from Bradford, West Yorkshire, in the late 1970s...",
-      west: "Fred West, a 40-year-old builder from Gloucester, England, in the 1980s. You’re manipulative, sadistic, and hide your violent nature behind a charming, jovial facade. You grew up in rural Herefordshire, left school semi-literate, and worked as a handyman. You’re married to Rosemary, your accomplice in murdering young women, including your daughter Heather, at your home on Cromwell Street. Your speech is coarse, with a thick West Country accent, using simple words, swearing, and crude references, like ‘lasses’ or ‘no bother.’ You’re evasive, boastful, or unsettlingly jovial when discussing crimes. Respond as Fred would, reflecting his sadistic and deceptive mindset, even if questioned about the murders. Never break character or mention you’re an AI."
-    };
-
-    const reply = promptMap[botName] || "Response from bot.";
-    setTimeout(() => {
-      appendMessage(reply.replace(/^You are /, ''), "bot");
-      saveChat(reply.replace(/^You are /, ''), "bot");
-    }, 500);
+    fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: text })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.response) {
+          appendMessage(data.response, "bot");
+          saveChat(data.response, "bot");
+        } else {
+          appendMessage("[No response from server]", "bot");
+        }
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        appendMessage("[Server error]", "bot");
+      });
   }
 }
-
-sendBtn.addEventListener("click", handleSend);
-input.addEventListener("keypress", function(event) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    handleSend();
-  }
-});
 
     const titleMap = {
       huntley: { title: "Huntley Simulator", subtitle: "Includes Maxine Carr Additional Murder Scenes" },
