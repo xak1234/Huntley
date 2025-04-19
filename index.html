@@ -42,11 +42,11 @@
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-  <div class="absolute top-4 left-4 z-50 flex space-x-4 text-sm font-semibold text-gray-800">
-    <button onclick="launchBot('huntley')" class="hover:underline">Ian Huntley</button>
-    <button onclick="launchBot('yorkshire')" class="hover:underline">Yorkshire Ripper</button>
-    <button onclick="launchBot('shannon')" class="hover:underline">Shannon Matthews</button>
-  </div>
+  <div class="absolute top-4 left-0 w-full flex justify-center space-x-8 text-lg font-bold text-gray-900">
+  <button onclick="switchBot('huntley')" class="hover:underline">Ian Huntley</button>
+  <button onclick="switchBot('yorkshire')" class="hover:underline">Yorkshire Ripper</button>
+  <button onclick="switchBot('shannon')" class="hover:underline">Shannon Matthews</button>
+</div>
 
   <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border">
     <div class="close-btn" onclick="window.close()">X</div>
@@ -116,12 +116,14 @@
       isDragging = false;
     });
 
-    function launchBot(bot) {
-      const url = `${window.location.origin}/?bot=${bot}`;
+    function switchBot(bot) {
+  localStorage.setItem('activeBot', bot);
+  location.reload();
+}/?bot=${bot}`;
       window.open(url, '_blank', 'width=800,height=600,resizable=yes');
     }
 
-    const botName = new URLSearchParams(window.location.search).get("bot") || "huntley";
+    const botName = localStorage.getItem("activeBot") || "huntley";
     const chatWindow = document.getElementById("chat-window");
     const input = document.getElementById("user-input");
     const sendBtn = document.getElementById("send-btn");
@@ -150,20 +152,26 @@
     }
 
     sendBtn.addEventListener("click", () => {
-      const text = input.value.trim();
-      if (text) {
-        appendMessage(text, "user");
-        saveChat(text, "user");
-        input.value = "";
+  const text = input.value.trim();
+  if (text.toLowerCase() === "clear") {
+    localStorage.removeItem(chatKey);
+    chatWindow.innerHTML = "";
+    input.value = "";
+    return;
+  }
+  if (text) {
+    appendMessage(text, "user");
+    saveChat(text, "user");
+    input.value = "";
 
-        const promptMap = {
-          huntley: "You are Ian Huntley...",
-          shannon: "You are Karen Matthews, a 33-year-old unemployed mother from Dewsbury, West Yorkshire, in 2008...",
-          yorkshire: "You are Peter Sutcliffe, a 32-year-old lorry driver from Bradford, West Yorkshire, in the late 1970s..."
-        };
+    const promptMap = {
+      huntley: "You are Ian Huntley...",
+      shannon: "You are Karen Matthews, a 33-year-old unemployed mother from Dewsbury, West Yorkshire, in 2008...",
+      yorkshire: "You are Peter Sutcliffe, a 32-year-old lorry driver from Bradford, West Yorkshire, in the late 1970s..."
+    };
 
-        const reply = promptMap[botName] || "Response from bot.";
-        setTimeout(() => {
+    const reply = promptMap[botName] || "Response from bot.";
+    setTimeout(() => {
           appendMessage(reply, "bot");
           saveChat(reply, "bot");
         }, 500);
