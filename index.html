@@ -1,95 +1,102 @@
-import { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-
-export default function BotSelector() {
-  const [activeBot, setActiveBot] = useState('');
-  const chatHistories = useRef({});
-
-  const bots = [
-    'The Yorkshire Ripper',
-    'Huntley'
-  ];
-
-  const handleBotClick = (bot) => {
-    setActiveBot(bot);
-    if (!chatHistories.current[bot]) {
-      chatHistories.current[bot] = [
-        `Bot personality loaded: ${bot} persona`
-      ];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Huntley - Chat with Bot</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background-color: transparent !important;
+      user-select: none;
     }
-    openChatWindow(bot);
-  };
-
-  const openChatWindow = (bot) => {
-    const history = chatHistories.current[bot];
-    const chatWindow = window.open('', bot, 'width=600,height=700');
-    if (!chatWindow) return alert('Popup blocked. Enable popups and try again.');
-
-    chatWindow.document.write(`
-      <html>
-        <head>
-          <title>${bot} Chat</title>
-          <style>
-            body { font-family: sans-serif; padding: 20px; background-color: #111; color: white; }
-            .header { font-size: 24px; font-weight: bold; color: #61dafb; margin-bottom: 20px; }
-            .chat-box { border: 1px solid #444; padding: 10px; height: 500px; overflow-y: scroll; background-color: #222; }
-            .input-area { margin-top: 10px; }
-            input { width: 100%; padding: 10px; border: none; background-color: #333; color: white; }
-          </style>
-        </head>
-        <body>
-          <div class="header">Chat with ${bot}</div>
-          <div class="chat-box" id="chat-box">
-            ${history.map(line => `<div>${line}</div>`).join('')}
-          </div>
-          <div class="input-area">
-            <input type="text" placeholder="Type your message..." onkeypress="
-              if(event.key === 'Enter') {
-                const input = event.target;
-                const msg = input.value.trim();
-                const box = document.getElementById('chat-box');
-                if (msg.toUpperCase() === 'CLEAR') {
-                  window.opener.postMessage({ bot: '${bot}', type: 'clear' }, '*');
-                  location.reload();
-                  return;
-                }
-                box.innerHTML += '<div style=\\'margin-top:10px;\\'><strong>You:</strong> ' + msg + '</div>';
-                window.opener.postMessage({ bot: '${bot}', type: 'message', msg }, '*');
-                input.value = '';
-              }">
-          </div>
-        </body>
-      </html>
-    `);
-  };
-
-  window.addEventListener('message', (e) => {
-    const { bot, type, msg } = e.data;
-    if (type === 'clear') {
-      chatHistories.current[bot] = [`Bot personality loaded: ${bot} persona`];
-    } else if (type === 'message') {
-      chatHistories.current[bot].push(`<strong>You:</strong> ${msg}`);
+    .no-border {
+      border-width: 1px;
     }
-  });
-
-  return (
-    <div className="p-4">
-      <div className="flex justify-center gap-4 mb-6">
-        {bots.map(bot => (
-          <Button
-            key={bot}
-            onClick={() => handleBotClick(bot)}
-            className="bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/50"
-          >
-            {bot}
-          </Button>
-        ))}
-      </div>
-      {activeBot && (
-        <div className="text-xl font-semibold text-center">
-          Active Bot: <span className="text-red-500">{activeBot}</span>
-        </div>
-      )}
+    .transparent-bg {
+      background-color: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+    }
+    .draggable {
+      position: absolute;
+      cursor: move;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+  <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border">
+    <h1 class="text-lg font-bold mb-2 text-center">Huntley Simulator</h1>
+    <p class="text-xs text-center mb-4">Includes Maxine Carr Additional Murder Scenes</p>
+    <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
+    <div class="flex">
+      <input id="user-input" type="text" class="flex-1 p-2 border rounded-l focus:outline-none" placeholder="Type your message...">
+      <button id="send-btn" class="bg-blue-500 text-white p-2 rounded-r hover:bg-blue-600">Send</button>
     </div>
-  );
-}
+  </div>
+
+  <script type="text/javascript">
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+
+    // Make window draggable
+    const dragEl = document.getElementById("draggable-window");
+    let offsetX = 0, offsetY = 0, isDragging = false;
+
+    dragEl.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      offsetX = e.clientX - dragEl.offsetLeft;
+      offsetY = e.clientY - dragEl.offsetTop;
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (isDragging) {
+        dragEl.style.left = `${e.clientX - offsetX}px`;
+        dragEl.style.top = `${e.clientY - offsetY}px`;
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+  </script>
+  <script src="/script.js"></script>
+</body>
+</html>
