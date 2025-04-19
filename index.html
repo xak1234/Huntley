@@ -7,42 +7,17 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      border: none;
-      background-color: transparent !important;
-      user-select: none;
+  $1
+    .bot-menu button {
+      transition: all 0.3s ease-in-out;
     }
-    .no-border {
-      border-width: 1px;
+    .bot-menu button:hover {
+      text-shadow: 0 0 5px rgba(255, 0, 0, 0.7);
+      transform: scale(1.1);
     }
-    .transparent-bg {
-      background-color: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(6px);
-    }
-    .draggable {
-      position: absolute;
-      cursor: move;
-    }
-    .close-btn {
-      position: absolute;
-      top: 0.25rem;
-      right: 0.25rem;
-      background-color: rgba(255, 0, 0, 0.8);
-      color: white;
-      padding: 0.1rem 0.25rem;
-      border-radius: 0.25rem;
-      font-size: 0.6rem;
-      font-weight: normal;
-      cursor: pointer;
-      z-index: 100;
-    }
-  </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-  <div class="absolute top-4 left-0 w-full flex justify-center space-x-8 text-xl font-bold text-white">
+  <div class="bot-menu absolute top-4 left-0 w-full flex justify-center space-x-8 text-xl font-bold text-red-600">
   <button onclick="switchBot('huntley')" class="hover:underline">Ian Huntley</button>
   <button onclick="switchBot('yorkshire')" class="hover:underline">Yorkshire Ripper</button>
   <button onclick="switchBot('shannon')" class="hover:underline">Shannon Matthews</button>
