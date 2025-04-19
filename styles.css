@@ -7,7 +7,7 @@ body {
     min-height: 100vh;
     margin: 0;
     padding: 20px; /* Add some padding for better spacing on smaller screens */
-    background-image: url('/backend/hunt.jpg'); /* Path to your image */
+    background-image: url('backend/hunt.jpg'); /* Path to your image */
     background-size: cover; /* Cover the entire viewport */
     background-repeat: no-repeat; /* Prevent image from repeating */
     background-position: center center; /* Center the image */
