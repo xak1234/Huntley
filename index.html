@@ -16,7 +16,7 @@
       user-select: none;
     }
     .no-border {
-      border-width: 1px;
+      border-width: 0.5px;
     }
     .transparent-bg {
       background-color: rgba(255, 255, 255, 0.1);
@@ -25,17 +25,19 @@
     .draggable {
       position: absolute;
       cursor: move;
+      resize: both;
+      overflow: auto;
     }
   </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
   <div id="draggable-window" class="draggable transparent-bg p-6 rounded-lg shadow w-full max-w-2xl border no-border">
-    <h1 class="text-lg font-bold mb-2 text-center">Huntley Simulator</h1>
-    <p class="text-xs text-center mb-4">Includes Maxine Carr Additional Murder Scenes</p>
+    <h1 class="text-base font-semibold tracking-tight mb-1 text-center">Huntley Simulator</h1>
+    <p class="text-xs text-center mb-3">Includes Maxine Carr Additional Murder Scenes</p>
     <div id="chat-window" class="h-96 overflow-y-auto border p-4 mb-4 rounded bg-gray-50 bg-opacity-50"></div>
-    <div class="flex">
-      <input id="user-input" type="text" class="flex-1 p-2 border rounded-l focus:outline-none" placeholder="Type your message...">
-      <button id="send-btn" class="bg-blue-500 text-white p-2 rounded-r hover:bg-blue-600">Send</button>
+    <div class="flex h-6">
+      <input id="user-input" type="text" class="flex-1 text-xs px-1 border rounded-l focus:outline-none" placeholder="Type your message...">
+      <button id="send-btn" class="bg-blue-500 text-white px-2 text-xs rounded-r hover:bg-blue-600">Send</button>
     </div>
   </div>
 
@@ -81,9 +83,11 @@
     let offsetX = 0, offsetY = 0, isDragging = false;
 
     dragEl.addEventListener("mousedown", (e) => {
-      isDragging = true;
-      offsetX = e.clientX - dragEl.offsetLeft;
-      offsetY = e.clientY - dragEl.offsetTop;
+      if (e.target === dragEl) {
+        isDragging = true;
+        offsetX = e.clientX - dragEl.offsetLeft;
+        offsetY = e.clientY - dragEl.offsetTop;
+      }
     });
 
     document.addEventListener("mousemove", (e) => {
